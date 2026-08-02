@@ -1,0 +1,89 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // users/{userId} — AppUser. Any signed-in user can read (needed for
+    // matching/profile display); only the owner or an admin can write.
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if false;
+    }
+
+    // verification_requests/{requestId} — VerificationRequest. Owner can
+    // create/read their own; only an admin can review (approve/reject).
+    match /verification_requests/{requestId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // trust_scores/{userId} — TrustScore. Readable by any signed-in user
+    // (shown on profiles/match cards); written only by a Cloud Function
+    // (Admin SDK bypasses these rules) after session completion/feedback.
+    match /trust_scores/{userId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // profiles/{userId} — UserProfile. Readable by any signed-in user
+    // (needed for matching/search); only the owner can write.
+    match /profiles/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId);
+    }
+
+    // sessions/{sessionId} — Session. Only the two participants
+    // (requester/volunteer) can read, create, or update.
+    match /sessions/{sessionId} {
+      allow read: if isSignedIn() &&
+        (request.auth.uid == resource.data.requesterId ||
+         request.auth.uid == resource.data.volunteerId);
+      allow create: if isSignedIn() &&
+        (request.auth.uid == request.resource.data.requesterId ||
+         request.auth.uid == request.resource.data.volunteerId);
+      allow update: if isSignedIn() &&
+        (request.auth.uid == resource.data.requesterId ||
+         request.auth.uid == resource.data.volunteerId);
+      allow delete: if false;
+    }
+
+    // session_feedback/{feedbackId} — SessionFeedback. Only a participant
+    // of the referenced session can create feedback for it; only
+    // participants of that session can read it.
+    match /session_feedback/{feedbackId} {
+      function session() {
+        return get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data;
+      }
+      function existingSession() {
+        return get(/databases/$(database)/documents/sessions/$(resource.data.sessionId)).data;
+      }
+
+      allow create: if isSignedIn() &&
+        request.auth.uid == request.resource.data.raterId &&
+        (request.auth.uid == session().requesterId ||
+         request.auth.uid == session().volunteerId);
+      allow read: if isSignedIn() &&
+        (request.auth.uid == existingSession().requesterId ||
+         request.auth.uid == existingSession().volunteerId);
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
