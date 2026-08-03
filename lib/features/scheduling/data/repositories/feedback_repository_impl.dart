@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 
+import 'package:elderly_companion/core/error/exceptions.dart';
 import 'package:elderly_companion/core/error/failures.dart';
 import 'package:elderly_companion/features/scheduling/data/datasources/scheduling_remote_data_source.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session_feedback.dart';
@@ -19,13 +20,40 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
     required int rating,
     String? comment,
   }) async {
-    throw UnimplementedError('TODO(Ranketh): implement via $_dataSource');
+    try {
+      final dto = await _dataSource.submitFeedback(
+        sessionId: sessionId,
+        raterId: raterId,
+        rating: rating,
+        comment: comment,
+      );
+      return Right(dto.toEntity());
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(UnknownFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 
   @override
   Future<Either<Failure, List<SessionFeedback>>> getFeedbackForSession(
     String sessionId,
   ) async {
-    throw UnimplementedError('TODO(Ranketh): implement via $_dataSource');
+    try {
+      final dtos = await _dataSource.getFeedbackForSession(sessionId);
+      return Right(dtos.map((d) => d.toEntity()).toList());
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(UnknownFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 }
