@@ -1,0 +1,127 @@
+import 'package:dartz/dartz.dart';
+import 'package:elderly_companion/core/error/failures.dart';
+import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
+import 'package:elderly_companion/features/matching/domain/entities/match_criteria.dart';
+import 'package:elderly_companion/features/matching/domain/repositories/matching_repository.dart';
+import 'package:elderly_companion/features/matching/domain/usecases/find_matches_usecase.dart';
+import 'package:elderly_companion/features/profiles/domain/entities/accessibility_preferences.dart';
+import 'package:elderly_companion/features/profiles/domain/entities/geo_coordinates.dart';
+import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+/// Mocks the abstract [MatchingRepository] interface (never the Firebase
+/// implementation) per the team's testing pattern — see
+/// test/features/auth_trust/auth_repository_test.dart for the canonical
+/// shape this copies.
+class MockMatchingRepository extends Mock implements MatchingRepository {}
+
+UserProfile _profile({
+  required String userId,
+  required String locality,
+  List<String> skillsOffered = const [],
+}) {
+  return UserProfile(
+    userId: userId,
+    displayName: 'User $userId',
+    bio: '',
+    locality: locality,
+    geoPoint: const GeoCoordinates(latitude: 0, longitude: 0),
+    skillsOffered: skillsOffered,
+    helpNeeded: const [],
+    availabilityWindows: const [],
+    accessibilityPrefs: const AccessibilityPreferences(
+      largeText: false,
+      highContrast: false,
+      simplifiedInterface: false,
+    ),
+  );
+}
+
+void main() {
+  late MockMatchingRepository matchingRepository;
+  late FindMatchesUseCase useCase;
+
+  setUp(() {
+    matchingRepository = MockMatchingRepository();
+    useCase = FindMatchesUseCase(matchingRepository);
+  });
+
+  const criteria = MatchCriteria(
+    locality: 'Colombo',
+    radiusKm: 10,
+    requiredSkills: ['gardening'],
+    preferredTimes: [],
+    origin: GeoCoordinates(latitude: 6.9271, longitude: 79.8612),
+  );
+
+  final lowScoreCandidate = MatchCandidate(
+    userId: 'user-1',
+    profile: _profile(userId: 'user-1', locality: 'Colombo'),
+    distanceKm: 9,
+    trustScore: 0.2,
+    matchScore: 0.0,
+    matchReasons: const [],
+  );
+
+  final highScoreCandidate = MatchCandidate(
+    userId: 'user-2',
+    profile: _profile(
+      userId: 'user-2',
+      locality: 'Colombo',
+      skillsOffered: ['gardening'],
+    ),
+    distanceKm: 1,
+    trustScore: 0.9,
+    matchScore: 0.0,
+    matchReasons: const [],
+  );
+
+  group('FindMatchesUseCase', () {
+    test('scores and sorts candidates descending by matchScore', () async {
+      when(() => matchingRepository.findMatches(criteria)).thenAnswer(
+        (_) async => Right([lowScoreCandidate, highScoreCandidate]),
+      );
+
+      final result = await useCase(criteria);
+
+      expect(result.isRight(), isTrue);
+      result.fold(
+        (_) => fail('Expected a Right(List<MatchCandidate>)'),
+        (candidates) {
+          expect(candidates.map((c) => c.userId), ['user-2', 'user-1']);
+          expect(candidates.first.matchScore, greaterThan(candidates.last.matchScore));
+        },
+      );
+    });
+
+    test('attaches human-readable matchReasons for distance, skills and trust', () async {
+      when(() => matchingRepository.findMatches(criteria)).thenAnswer(
+        (_) async => Right([highScoreCandidate]),
+      );
+
+      final result = await useCase(criteria);
+
+      result.fold(
+        (_) => fail('Expected a Right(List<MatchCandidate>)'),
+        (candidates) {
+          final reasons = candidates.single.matchReasons;
+          expect(reasons, contains('1.0 km away'));
+          expect(reasons, contains('Offers gardening'));
+          expect(reasons, contains('Highly trusted (90% trust score)'));
+        },
+      );
+    });
+
+    test('propagates a Left(Failure) from the repository unchanged', () async {
+      when(() => matchingRepository.findMatches(criteria)).thenAnswer(
+        (_) async => const Left(UnknownFailure('boom')),
+      );
+
+      final result = await useCase(criteria);
+
+      expect(result, const Left<Failure, List<MatchCandidate>>(UnknownFailure('boom')));
+      verify(() => matchingRepository.findMatches(criteria)).called(1);
+    });
+  });
+}
