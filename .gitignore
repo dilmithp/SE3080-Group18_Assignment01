@@ -61,3 +61,8 @@ coverage/
 /.claude-flow
 /macos
 /.claude-flow
+
+# Platform runner folders — regenerate locally, do not commit.
+# Run: flutter create . --platforms=android,ios
+/android/
+/ios/
