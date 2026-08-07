@@ -3,9 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elderly_companion/core/config/app_config.dart';
 import 'package:elderly_companion/core/error/exceptions.dart';
 import 'package:elderly_companion/core/services/firestore_service.dart';
+import 'package:elderly_companion/features/scheduling/data/exceptions/scheduling_exceptions.dart';
 import 'package:elderly_companion/features/scheduling/data/models/session_dto.dart';
 import 'package:elderly_companion/features/scheduling/data/models/session_feedback_dto.dart';
+import 'package:elderly_companion/features/scheduling/domain/entities/session.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session_status.dart';
+import 'package:elderly_companion/features/scheduling/domain/services/session_conflict_detector.dart';
 
 /// Raw Firebase calls for scheduling — session booking/lifecycle and
 /// feedback both live here even though they sit behind two separate
@@ -27,6 +30,16 @@ abstract class SchedulingRemoteDataSource {
     required SessionStatus status,
   });
 
+  /// Accepts [sessionId] on behalf of [confirmingUserId], re-checking the
+  /// slot inside a Firestore transaction. Throws
+  /// [SessionConflictException] if the slot was taken in the meantime and
+  /// [InvalidSessionTransitionException] if the session is no longer in a
+  /// state that can be confirmed.
+  Future<SessionDto> confirmSession({
+    required String sessionId,
+    required String confirmingUserId,
+  });
+
   Future<SessionDto> getSession(String sessionId);
 
   Stream<List<SessionDto>> watchSessionsForUser(String userId);
@@ -42,10 +55,14 @@ abstract class SchedulingRemoteDataSource {
 }
 
 class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
-  FirebaseSchedulingRemoteDataSource({required FirestoreService firestoreService})
-      : _firestoreService = firestoreService;
+  FirebaseSchedulingRemoteDataSource({
+    required FirestoreService firestoreService,
+    SessionConflictDetector conflictDetector = const SessionConflictDetector(),
+  })  : _firestoreService = firestoreService,
+        _conflictDetector = conflictDetector;
 
   final FirestoreService _firestoreService;
+  final SessionConflictDetector _conflictDetector;
 
   @override
   Future<SessionDto> bookSession({
@@ -110,6 +127,110 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
       return getSession(sessionId);
     } on FirebaseException catch (e) {
       throw ServerException(e.message ?? 'Server error.');
+    } on NotFoundException {
+      rethrow;
+    } catch (_) {
+      throw const ServerException();
+    }
+  }
+
+  @override
+  Future<SessionDto> confirmSession({
+    required String sessionId,
+    required String confirmingUserId,
+  }) async {
+    try {
+      final collection =
+          _firestoreService.collection(AppConfig.sessionsCollection);
+      final sessionRef = collection.doc(sessionId);
+
+      // Read once up front to learn who and when — the shortlist query below
+      // needs the session's own time window, and the transaction re-reads
+      // this same document anyway before trusting anything here.
+      final preRead = await sessionRef.get();
+      final preReadData = preRead.data();
+      if (preReadData == null) {
+        throw const NotFoundException('Session not found.');
+      }
+      final candidate = _sessionDtoFromData(sessionId, preReadData).toEntity();
+
+      // The client SDK cannot run a query inside a transaction, so the
+      // possible clashes are shortlisted here and each one is then re-read
+      // *by reference* inside the transaction — that puts them in the
+      // transaction's read set, so a concurrent write to any of them aborts
+      // and retries this whole block rather than confirming over the top of
+      // it.
+      //
+      // Only the confirming user's own sessions are visible: firestore.rules
+      // restricts `sessions` reads to that document's own participants, so a
+      // query spanning the counterparty's other bookings would be rejected.
+      // TODO(ranketh): the counterparty's side of the calendar can only be
+      // checked with the Admin SDK — move this check into the reminders
+      // Cloud Function when backend/ is in scope.
+      final shortlist = await collection
+          .where(
+            Filter.or(
+              Filter('requesterId', isEqualTo: confirmingUserId),
+              Filter('volunteerId', isEqualTo: confirmingUserId),
+            ),
+          )
+          .get();
+
+      final refs = shortlist.docs
+          .where((doc) => doc.id != sessionId)
+          .where(
+            (doc) => _conflictDetector.hasConflict(
+              candidate: candidate,
+              existing: [_sessionDtoFromData(doc.id, doc.data()).toEntity()],
+            ),
+          )
+          .map((doc) => doc.reference)
+          .toList();
+
+      return await sessionRef.firestore.runTransaction<SessionDto>((txn) async {
+        // Every read has to happen before the first write in a transaction,
+        // hence the two loops.
+        final snapshot = await txn.get(sessionRef);
+        final data = snapshot.data();
+        if (data == null) {
+          throw const NotFoundException('Session not found.');
+        }
+        final current = _sessionDtoFromData(sessionId, data).toEntity();
+
+        if (!current.status.canTransitionTo(SessionStatus.confirmed)) {
+          throw InvalidSessionTransitionException(
+            'This session is ${current.status.label.toLowerCase()} and can no '
+            'longer be confirmed.',
+          );
+        }
+
+        final others = <Session>[];
+        for (final ref in refs) {
+          final otherSnapshot = await txn.get(ref);
+          final otherData = otherSnapshot.data();
+          if (otherData == null) continue;
+          others.add(_sessionDtoFromData(otherSnapshot.id, otherData).toEntity());
+        }
+
+        final conflicts = _conflictDetector.conflictsFor(
+          candidate: current,
+          existing: others,
+        );
+        if (conflicts.isNotEmpty) {
+          throw const SessionConflictException();
+        }
+
+        txn.update(sessionRef, {'status': SessionStatus.confirmed.name});
+        return SessionDto.fromEntity(
+          current.copyWith(status: SessionStatus.confirmed),
+        );
+      });
+    } on FirebaseException catch (e) {
+      throw ServerException(e.message ?? 'Server error.');
+    } on SessionConflictException {
+      rethrow;
+    } on InvalidSessionTransitionException {
+      rethrow;
     } on NotFoundException {
       rethrow;
     } catch (_) {

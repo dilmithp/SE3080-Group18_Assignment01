@@ -25,6 +25,18 @@ abstract class SessionRepository {
     required SessionStatus status,
   });
 
+  /// Accepts [sessionId] on behalf of [confirmingUserId] — the
+  /// `requested -> confirmed` edge, which unlike a plain status write
+  /// re-checks the slot at accept time so two overlapping requests cannot
+  /// both be confirmed.
+  ///
+  /// Returns a [Failure] carrying a conflict message when the slot was
+  /// taken in the meantime.
+  Future<Either<Failure, Session>> confirmSession({
+    required String sessionId,
+    required String confirmingUserId,
+  });
+
   Future<Either<Failure, Session>> getSession(String sessionId);
 
   /// Emits the current list of sessions involving [userId] (as requester or

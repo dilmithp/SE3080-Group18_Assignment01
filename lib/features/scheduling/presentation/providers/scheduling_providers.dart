@@ -8,6 +8,7 @@ import 'package:elderly_companion/features/scheduling/domain/entities/session.da
 import 'package:elderly_companion/features/scheduling/domain/repositories/feedback_repository.dart';
 import 'package:elderly_companion/features/scheduling/domain/repositories/session_repository.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/book_session_usecase.dart';
+import 'package:elderly_companion/features/scheduling/domain/usecases/confirm_session_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/submit_feedback_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/update_session_status_usecase.dart';
 
@@ -32,6 +33,10 @@ final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
 
 final bookSessionUseCaseProvider = Provider<BookSessionUseCase>((ref) {
   return BookSessionUseCase(ref.watch(sessionRepositoryProvider));
+});
+
+final confirmSessionUseCaseProvider = Provider<ConfirmSessionUseCase>((ref) {
+  return ConfirmSessionUseCase(ref.watch(sessionRepositoryProvider));
 });
 
 final updateSessionStatusUseCaseProvider = Provider<UpdateSessionStatusUseCase>((ref) {
