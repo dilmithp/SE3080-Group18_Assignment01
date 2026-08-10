@@ -18,8 +18,15 @@ import 'package:elderly_companion/features/scheduling/domain/entities/session_st
 import 'package:elderly_companion/features/scheduling/presentation/providers/scheduling_providers.dart';
 
 /// Owner: Ranketh (features/scheduling). Real session details wired to
-/// [SessionRepository.getSession], with status-transition actions backed by
-/// [UpdateSessionStatusUseCase].
+/// [SessionRepository.getSession].
+///
+/// Transitions go through one of two paths: `requested -> confirmed` uses
+/// [ConfirmSessionUseCase], which re-checks the slot inside a transaction so
+/// two overlapping requests cannot both be accepted; every other edge is a
+/// plain [UpdateSessionStatusUseCase] write. Which buttons appear is derived
+/// from [SessionStatus.allowedNextStatuses] rather than hardcoded per
+/// status, so this screen cannot drift from the transition rules the domain
+/// enforces.
 class SessionDetailsScreen extends ConsumerWidget {
   const SessionDetailsScreen({required this.sessionId, super.key});
 
@@ -81,12 +88,46 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
     }
   }
 
+  /// The `requested -> confirmed` edge, which unlike the other transitions
+  /// re-checks the slot at accept time. A clash comes back as a
+  /// `Left(Failure)` carrying the conflict message, shown through the same
+  /// snackbar path as every other failure here.
+  Future<void> _confirmSession(String confirmingUserId) async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _isUpdating = true);
+    try {
+      final useCase = ref.read(confirmSessionUseCaseProvider);
+      final result = await useCase(
+        sessionId: widget.session.id,
+        confirmingUserId: confirmingUserId,
+      );
+      result.fold(
+        (failure) {
+          // A refused confirm usually means the stored session moved on
+          // without us — the other party cancelled, or the slot went to
+          // someone else — so re-read rather than leaving stale actions up.
+          ref.invalidate(sessionProvider(widget.session.id));
+          messenger
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(failure.message)));
+        },
+        (_) {
+          ref.invalidate(sessionProvider(widget.session.id));
+          messenger
+            ..hideCurrentSnackBar()
+            ..showSnackBar(const SnackBar(content: Text('Session confirmed.')));
+        },
+      );
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
   /// The signed-in user's counterpart on this session — whichever of
   /// requester/volunteer isn't them. `null` while auth state is still
   /// loading or the user isn't signed in; the notes card below just stays
   /// hidden in that case rather than guessing.
-  String? _otherPartyId(Session session, WidgetRef ref) {
-    final userId = ref.watch(authStateProvider).valueOrNull?.id;
+  String? _otherPartyId(Session session, String? userId) {
     if (userId == null) return null;
     return userId == session.requesterId ? session.volunteerId : session.requesterId;
   }
@@ -97,7 +138,10 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
     final session = widget.session;
     final formatted =
         DateFormat('EEEE, d MMMM · h:mm a').format(session.scheduledAt);
-    final otherPartyId = _otherPartyId(session, ref);
+    // Confirming has to be attributed to whoever is accepting, so the
+    // signed-in id is resolved once here and handed to both users of it.
+    final currentUserId = ref.watch(authStateProvider).valueOrNull?.id;
+    final otherPartyId = _otherPartyId(session, currentUserId);
     final communicationNotes = otherPartyId == null
         ? null
         : ref.watch(profileProvider(otherPartyId)).valueOrNull?.accessibilityPrefs
@@ -189,7 +233,7 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
                 ),
               ],
               const SizedBox(height: AppSpacing.lg),
-              ..._actionsFor(session.status),
+              ..._actionsFor(session, currentUserId),
               const SizedBox(height: AppSpacing.md),
               if (session.status == SessionStatus.completed)
                 AppButton(
@@ -206,45 +250,71 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
     );
   }
 
-  List<Widget> _actionsFor(SessionStatus status) {
-    switch (status) {
-      case SessionStatus.requested:
-        return [
-          AppButton(
-            label: 'Confirm session',
-            icon: Icons.check_circle_outline,
-            isLoading: _isUpdating,
-            onPressed: () => _updateStatus(SessionStatus.confirmed),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          AppButton(
-            label: 'Cancel',
-            icon: Icons.close,
-            secondary: true,
-            isLoading: _isUpdating,
-            onPressed: () => _updateStatus(SessionStatus.cancelled),
-          ),
-        ];
+  /// Buttons are derived from [SessionStatus.allowedNextStatuses] — the same
+  /// map the domain enforces — so an illegal action can never be offered,
+  /// and a terminal session (completed/cancelled) simply shows none. Set
+  /// literals iterate in insertion order, which puts the affirmative action
+  /// above "Cancel".
+  List<Widget> _actionsFor(Session session, String? currentUserId) {
+    final actions = <Widget>[];
+    for (final next in session.status.allowedNextStatuses) {
+      if (actions.isNotEmpty) {
+        actions.add(const SizedBox(height: AppSpacing.sm));
+      }
+      actions.add(_actionButton(next, currentUserId));
+    }
+    return actions;
+  }
+
+  Widget _actionButton(SessionStatus next, String? currentUserId) {
+    final isConfirm = next == SessionStatus.confirmed;
+
+    return AppButton(
+      label: _actionLabel(next),
+      icon: _actionIcon(next),
+      secondary: next == SessionStatus.cancelled,
+      isLoading: _isUpdating,
+      // Confirming needs to know who is accepting; while auth state is
+      // still loading there is nobody to attribute it to, so the action
+      // stays disabled rather than guessing a participant.
+      onPressed: isConfirm && currentUserId == null
+          ? null
+          : () {
+              if (isConfirm) {
+                _confirmSession(currentUserId!);
+              } else {
+                _updateStatus(next);
+              }
+            },
+    );
+  }
+
+  String _actionLabel(SessionStatus next) {
+    switch (next) {
       case SessionStatus.confirmed:
-        return [
-          AppButton(
-            label: 'Mark completed',
-            icon: Icons.task_alt_outlined,
-            isLoading: _isUpdating,
-            onPressed: () => _updateStatus(SessionStatus.completed),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          AppButton(
-            label: 'Cancel',
-            icon: Icons.close,
-            secondary: true,
-            isLoading: _isUpdating,
-            onPressed: () => _updateStatus(SessionStatus.cancelled),
-          ),
-        ];
+        return 'Confirm session';
       case SessionStatus.completed:
+        return 'Mark completed';
       case SessionStatus.cancelled:
-        return const [];
+        return 'Cancel';
+      case SessionStatus.requested:
+        // Unreachable under the current transition matrix — kept so adding
+        // an edge back to `requested` later fails loudly in review rather
+        // than silently rendering a blank button.
+        return 'Reopen request';
+    }
+  }
+
+  IconData _actionIcon(SessionStatus next) {
+    switch (next) {
+      case SessionStatus.confirmed:
+        return Icons.check_circle_outline;
+      case SessionStatus.completed:
+        return Icons.task_alt_outlined;
+      case SessionStatus.cancelled:
+        return Icons.close;
+      case SessionStatus.requested:
+        return Icons.schedule_outlined;
     }
   }
 }
