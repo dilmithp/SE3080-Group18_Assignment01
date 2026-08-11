@@ -29,3 +29,65 @@ class DefaultMatchingStrategy implements MatchingStrategy {
     return (proximityScore * 0.4) + (trustComponent * 0.35) + (skillOverlap * 0.25);
   }
 }
+
+/// The three raw signals every strategy below blends, factored out so
+/// [ProximityFirstStrategy], [TrustFirstStrategy] and
+/// [SkillMatchFirstStrategy] don't each re-derive them — [DefaultMatchingStrategy]
+/// above is untouched and keeps its own inline copies, since it predates
+/// these and stays as the one hand-written reference implementation.
+double _proximityScore(MatchCandidate candidate, MatchCriteria criteria) {
+  return (1 - (candidate.distanceKm / (criteria.radiusKm == 0 ? 1 : criteria.radiusKm)))
+      .clamp(0.0, 1.0);
+}
+
+double _trustComponent(MatchCandidate candidate) => candidate.trustScore.clamp(0.0, 1.0);
+
+double _skillOverlap(MatchCandidate candidate, MatchCriteria criteria) {
+  return criteria.requiredSkills.isEmpty
+      ? 1.0
+      : criteria.requiredSkills
+              .where((skill) => candidate.profile.skillsOffered.contains(skill))
+              .length /
+          criteria.requiredSkills.length;
+}
+
+/// For a searcher who cares most about "who's close by" — a companion
+/// visiting in person, say. Weights proximity far above trust and skill
+/// overlap, the reverse emphasis of [DefaultMatchingStrategy].
+class ProximityFirstStrategy implements MatchingStrategy {
+  const ProximityFirstStrategy();
+
+  @override
+  double score(MatchCandidate candidate, MatchCriteria criteria) {
+    return (_proximityScore(candidate, criteria) * 0.7) +
+        (_trustComponent(candidate) * 0.15) +
+        (_skillOverlap(candidate, criteria) * 0.15);
+  }
+}
+
+/// For a searcher who cares most about safety/reliability over convenience —
+/// weights trust score far above proximity and skill overlap.
+class TrustFirstStrategy implements MatchingStrategy {
+  const TrustFirstStrategy();
+
+  @override
+  double score(MatchCandidate candidate, MatchCriteria criteria) {
+    return (_trustComponent(candidate) * 0.7) +
+        (_proximityScore(candidate, criteria) * 0.15) +
+        (_skillOverlap(candidate, criteria) * 0.15);
+  }
+}
+
+/// For a searcher whose need is specific enough that the right skill set
+/// matters more than distance or track record — weights skill overlap far
+/// above proximity and trust.
+class SkillMatchFirstStrategy implements MatchingStrategy {
+  const SkillMatchFirstStrategy();
+
+  @override
+  double score(MatchCandidate candidate, MatchCriteria criteria) {
+    return (_skillOverlap(candidate, criteria) * 0.7) +
+        (_proximityScore(candidate, criteria) * 0.15) +
+        (_trustComponent(candidate) * 0.15);
+  }
+}
