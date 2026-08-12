@@ -15,8 +15,9 @@ class UpdateSessionStatusUseCase {
     required String sessionId,
     required SessionStatus status,
   }) async {
-    throw UnimplementedError(
-      'TODO(Ranketh): implement via ${_repository.runtimeType}',
+    return _repository.updateSessionStatus(
+      sessionId: sessionId,
+      status: status,
     );
   }
 }

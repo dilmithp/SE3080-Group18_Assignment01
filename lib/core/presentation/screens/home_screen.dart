@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:elderly_companion/core/routing/app_router.dart';
 import 'package:elderly_companion/core/routing/route_names.dart';
 import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 
 /// Post-login dashboard. Shell screen owned by no single feature — it just
 /// links out to each feature's placeholder screen and exposes the
@@ -25,9 +25,9 @@ class HomeScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
-            onPressed: () {
-              ref.read(isAuthenticatedProvider.notifier).state = false;
-              context.go(RouteNames.login);
+            onPressed: () async {
+              await ref.read(authRepositoryProvider).signOut();
+              if (context.mounted) context.go(RouteNames.login);
             },
           ),
         ],

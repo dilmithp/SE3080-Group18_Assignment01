@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:elderly_companion/core/presentation/screens/home_screen.dart';
 import 'package:elderly_companion/core/presentation/screens/splash_screen.dart';
 import 'package:elderly_companion/core/routing/route_names.dart';
+import 'package:elderly_companion/features/auth_trust/domain/entities/app_user.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/screens/login_screen.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/screens/signup_screen.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/screens/verification_screen.dart';
@@ -16,26 +18,17 @@ import 'package:elderly_companion/features/scheduling/presentation/screens/sched
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_details_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_feedback_screen.dart';
 
-/// Placeholder, in-memory auth flag driving the redirect guard below.
-///
-/// TODO(Pathirana): once `AuthRepository.authStateChanges()` is implemented,
-/// replace this with a `StreamProvider<AppUser?>` from auth_trust and update
-/// [_redirect] / [_RouterRefreshNotifier] to listen to it instead. Kept as a
-/// standalone core provider for now so the router — and every other
-/// feature's navigation — isn't blocked on auth_trust's implementation.
-final isAuthenticatedProvider = StateProvider<bool>((ref) => false);
-
 /// Bridges a Riverpod-watched value into a [Listenable] so [GoRouter] can
 /// react to auth-state changes without rebuilding the whole router.
 class _RouterRefreshNotifier extends ChangeNotifier {
   _RouterRefreshNotifier(Ref ref) {
-    _subscription = ref.listen<bool>(
-      isAuthenticatedProvider,
+    _subscription = ref.listen<AsyncValue<AppUser?>>(
+      authStateProvider,
       (_, __) => notifyListeners(),
     );
   }
 
-  late final ProviderSubscription<bool> _subscription;
+  late final ProviderSubscription<AsyncValue<AppUser?>> _subscription;
 
   @override
   void dispose() {
@@ -45,7 +38,7 @@ class _RouterRefreshNotifier extends ChangeNotifier {
 }
 
 String? _redirect(Ref ref, GoRouterState state) {
-  final isAuthenticated = ref.read(isAuthenticatedProvider);
+  final isAuthenticated = ref.read(authStateProvider).valueOrNull != null;
   final location = state.matchedLocation;
   final isAuthRoute = location == RouteNames.login || location == RouteNames.signup;
 

@@ -11,8 +11,6 @@ class GetTrustScoreUseCase {
   final TrustScoreRepository _repository;
 
   Future<Either<Failure, TrustScore>> call(String userId) async {
-    throw UnimplementedError(
-      'TODO(Pathirana): implement via ${_repository.runtimeType}',
-    );
+    return _repository.getTrustScore(userId);
   }
 }

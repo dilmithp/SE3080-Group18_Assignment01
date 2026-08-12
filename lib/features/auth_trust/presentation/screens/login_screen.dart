@@ -2,20 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:elderly_companion/core/routing/app_router.dart';
 import 'package:elderly_companion/core/routing/route_names.dart';
 import 'package:elderly_companion/core/utils/validators.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
 import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 
-/// Placeholder screen — owner: Pathirana (features/auth_trust).
-///
-/// The "Sign in" button calls the real (currently stubbed) use case so the
-/// DI wiring can be exercised end-to-end. "Continue without an account" is
-/// a dev-only bypass so the rest of the team isn't blocked from navigating
-/// the app while sign-in is still being implemented — remove it once
-/// [SignInWithEmailUseCase] is real.
+/// Owner: Pathirana (features/auth_trust). Real sign-in via
+/// [SignInWithEmailUseCase] — successful sign-in updates [authStateProvider]
+/// via Firebase, which drives the router's redirect guard automatically;
+/// the explicit `context.go` below just avoids waiting on that round-trip
+/// for the immediate UX.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -48,7 +45,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       result.fold(
         (failure) => _showMessage(failure.message),
         (user) {
-          ref.read(isAuthenticatedProvider.notifier).state = true;
           if (mounted) context.go(RouteNames.home);
         },
       );
@@ -57,11 +53,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
-  }
-
-  void _continueAsGuest() {
-    ref.read(isAuthenticatedProvider.notifier).state = true;
-    context.go(RouteNames.home);
   }
 
   void _showMessage(String message) {
@@ -106,12 +97,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   label: 'Sign in',
                   isLoading: _isSubmitting,
                   onPressed: _submit,
-                ),
-                const SizedBox(height: 12),
-                AppButton(
-                  label: 'Continue without an account (dev preview)',
-                  secondary: true,
-                  onPressed: _continueAsGuest,
                 ),
                 const SizedBox(height: 16),
                 TextButton(

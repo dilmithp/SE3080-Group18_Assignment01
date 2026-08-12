@@ -21,9 +21,13 @@ class FindMatchesUseCase {
   final MatchingStrategy _strategy;
 
   Future<Either<Failure, List<MatchCandidate>>> call(MatchCriteria criteria) async {
-    throw UnimplementedError(
-      'TODO(Wijekoon): implement via ${_repository.runtimeType}, ranking '
-      'results with ${_strategy.runtimeType}',
-    );
+    final result = await _repository.findMatches(criteria);
+    return result.map((candidates) {
+      final scored = candidates
+          .map((c) => c.copyWith(matchScore: _strategy.score(c, criteria)))
+          .toList()
+        ..sort((a, b) => b.matchScore.compareTo(a.matchScore));
+      return scored;
+    });
   }
 }

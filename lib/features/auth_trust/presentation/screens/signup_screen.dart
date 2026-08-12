@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:elderly_companion/core/routing/app_router.dart';
 import 'package:elderly_companion/core/routing/route_names.dart';
 import 'package:elderly_companion/core/utils/validators.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
@@ -10,9 +9,8 @@ import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 
-/// Placeholder screen — owner: Pathirana (features/auth_trust). See
-/// LoginScreen for the pattern this follows (real use-case call + dev
-/// bypass so teammates aren't blocked).
+/// Owner: Pathirana (features/auth_trust). See [LoginScreen] for the real
+/// sign-in pattern this follows.
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
@@ -50,7 +48,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       result.fold(
         (failure) => _showMessage(failure.message),
         (user) {
-          ref.read(isAuthenticatedProvider.notifier).state = true;
           if (mounted) context.go(RouteNames.home);
         },
       );

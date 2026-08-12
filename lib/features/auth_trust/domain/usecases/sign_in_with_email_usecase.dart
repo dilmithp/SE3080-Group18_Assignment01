@@ -14,8 +14,6 @@ class SignInWithEmailUseCase {
     required String email,
     required String password,
   }) async {
-    throw UnimplementedError(
-      'TODO(Pathirana): implement sign-in via ${_repository.runtimeType}',
-    );
+    return _repository.signInWithEmail(email: email, password: password);
   }
 }

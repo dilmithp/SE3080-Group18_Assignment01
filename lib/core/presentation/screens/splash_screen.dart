@@ -3,14 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:elderly_companion/core/config/app_config.dart';
-import 'package:elderly_companion/core/routing/app_router.dart';
 import 'package:elderly_companion/core/routing/route_names.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 
-/// First screen shown on launch. Decides whether to land on [RouteNames.home]
-/// or [RouteNames.login] based on [isAuthenticatedProvider].
-///
-/// TODO(Pathirana): once real auth-state restoration exists, this should
-/// await it instead of reading the placeholder flag directly.
+/// First screen shown on launch. Awaits the first real Firebase auth-state
+/// emission (see [authStateProvider]) then lands on [RouteNames.home] or
+/// [RouteNames.login] accordingly.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -26,10 +24,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    await Future<void>.delayed(const Duration(milliseconds: 400));
+    final user = await ref.read(authStateProvider.future);
     if (!mounted) return;
-    final isAuthenticated = ref.read(isAuthenticatedProvider);
-    context.go(isAuthenticated ? RouteNames.home : RouteNames.login);
+    context.go(user != null ? RouteNames.home : RouteNames.login);
   }
 
   @override

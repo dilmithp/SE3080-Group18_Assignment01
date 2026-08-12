@@ -11,8 +11,6 @@ class UpdateProfileUseCase {
   final ProfileRepository _repository;
 
   Future<Either<Failure, UserProfile>> call(UserProfile profile) async {
-    throw UnimplementedError(
-      'TODO(Perera): implement via ${_repository.runtimeType}',
-    );
+    return _repository.updateProfile(profile);
   }
 }

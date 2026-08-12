@@ -50,11 +50,13 @@ class UserProfileDto with _$UserProfileDto {
         skillsOffered: entity.skillsOffered,
         helpNeeded: entity.helpNeeded,
         availabilityWindows: entity.availabilityWindows
-            .map((window) => <String, dynamic>{
-                  'dayOfWeek': window.dayOfWeek,
-                  'startTime': window.startTime,
-                  'endTime': window.endTime,
-                })
+            .map(
+              (window) => <String, dynamic>{
+                'dayOfWeek': window.dayOfWeek,
+                'startTime': window.startTime,
+                'endTime': window.endTime,
+              },
+            )
             .toList(),
         accessibilityPrefs: <String, dynamic>{
           'largeText': entity.accessibilityPrefs.largeText,
@@ -74,11 +76,13 @@ class UserProfileDto with _$UserProfileDto {
         skillsOffered: skillsOffered,
         helpNeeded: helpNeeded,
         availabilityWindows: availabilityWindows
-            .map((window) => AvailabilityWindow(
-                  dayOfWeek: window['dayOfWeek'] as String,
-                  startTime: window['startTime'] as String,
-                  endTime: window['endTime'] as String,
-                ))
+            .map(
+              (window) => AvailabilityWindow(
+                dayOfWeek: window['dayOfWeek'] as String,
+                startTime: window['startTime'] as String,
+                endTime: window['endTime'] as String,
+              ),
+            )
             .toList(),
         accessibilityPrefs: AccessibilityPreferences(
           largeText: accessibilityPrefs['largeText'] as bool? ?? false,

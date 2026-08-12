@@ -11,8 +11,6 @@ class GetProfileUseCase {
   final ProfileRepository _repository;
 
   Future<Either<Failure, UserProfile>> call(String userId) async {
-    throw UnimplementedError(
-      'TODO(Perera): implement via ${_repository.runtimeType}',
-    );
+    return _repository.getProfile(userId);
   }
 }

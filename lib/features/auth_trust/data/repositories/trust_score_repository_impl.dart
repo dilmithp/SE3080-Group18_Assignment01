@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 
+import 'package:elderly_companion/core/error/exceptions.dart';
 import 'package:elderly_companion/core/error/failures.dart';
 import 'package:elderly_companion/features/auth_trust/data/datasources/auth_trust_remote_data_source.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/trust_score.dart';
@@ -14,11 +15,24 @@ class TrustScoreRepositoryImpl implements TrustScoreRepository {
 
   @override
   Future<Either<Failure, TrustScore>> getTrustScore(String userId) async {
-    throw UnimplementedError('TODO(Pathirana): implement via $_dataSource');
+    try {
+      final dto = await _dataSource.getTrustScore(userId);
+      return Right(dto.toEntity());
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on PermissionException catch (e) {
+      return Left(PermissionFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 
   @override
   Stream<TrustScore?> watchTrustScore(String userId) {
-    throw UnimplementedError('TODO(Pathirana): implement via $_dataSource');
+    return _dataSource.watchTrustScore(userId).map((dto) => dto?.toEntity());
   }
 }
