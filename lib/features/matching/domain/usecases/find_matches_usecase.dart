@@ -7,24 +7,22 @@ import 'package:elderly_companion/features/matching/domain/repositories/matching
 import 'package:elderly_companion/features/matching/domain/strategies/matching_strategy.dart';
 
 /// Single business rule: find and rank candidate matches for the given
-/// [MatchCriteria]. Ranking itself is delegated to [MatchingStrategy]
-/// (Open/Closed — see domain/strategies/matching_strategy.dart); fetching
-/// the raw candidate pool is delegated to [MatchingRepository] and is
-/// still a stub pending the data layer.
+/// [MatchCriteria]. Ranking itself is delegated to whichever [MatchingStrategy]
+/// [MatchCriteria.strategyType] names (Open/Closed — see
+/// domain/strategies/matching_strategy.dart); fetching the raw candidate
+/// pool is delegated to [MatchingRepository] and is still a stub pending
+/// the data layer.
 class FindMatchesUseCase {
-  const FindMatchesUseCase(
-    this._repository, [
-    this._strategy = const DefaultMatchingStrategy(),
-  ]);
+  const FindMatchesUseCase(this._repository);
 
   final MatchingRepository _repository;
-  final MatchingStrategy _strategy;
 
   Future<Either<Failure, List<MatchCandidate>>> call(MatchCriteria criteria) async {
+    final strategy = criteria.strategyType.toStrategy();
     final result = await _repository.findMatches(criteria);
     return result.map((candidates) {
       final scored = candidates.map((c) {
-        final withScore = c.copyWith(matchScore: _strategy.score(c, criteria));
+        final withScore = c.copyWith(matchScore: strategy.score(c, criteria));
         return withScore.copyWith(
           matchReasons: _explain(withScore, criteria),
         );
