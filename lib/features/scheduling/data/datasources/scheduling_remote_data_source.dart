@@ -75,6 +75,12 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
   }) async {
     try {
       final id = _firestoreService.newDocId(AppConfig.sessionsCollection);
+      // Client clock rather than FieldValue.serverTimestamp() so the DTO
+      // returned below matches what was just written without a second read.
+      // TODO(ranketh): switch the audit stamps to serverTimestamp() once
+      // something actually orders sessions by them — a skewed device clock
+      // matters for sorting, not for the display this feeds today.
+      final now = Timestamp.now();
       await _firestoreService.setDocument(
         collectionPath: AppConfig.sessionsCollection,
         docId: id,
@@ -86,6 +92,13 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
           'status': SessionStatus.requested.name,
           'location': location,
           'notes': notes,
+          // A booking is one-off until the recurring-sessions work lands,
+          // and unflagged until something detects an overlap it could not
+          // see at request time.
+          'isRecurring': false,
+          'conflictFlag': false,
+          'createdAt': now,
+          'updatedAt': now,
         },
       );
       return SessionDto(
@@ -97,6 +110,8 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
         status: SessionStatus.requested.name,
         location: location,
         notes: notes,
+        createdAtMillis: now.millisecondsSinceEpoch,
+        updatedAtMillis: now.millisecondsSinceEpoch,
       );
     } on FirebaseException catch (e) {
       throw ServerException(e.message ?? 'Server error.');
@@ -122,7 +137,7 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
       await _firestoreService.setDocument(
         collectionPath: AppConfig.sessionsCollection,
         docId: sessionId,
-        data: {'status': status.name},
+        data: {'status': status.name, 'updatedAt': Timestamp.now()},
       );
       return getSession(sessionId);
     } on FirebaseException catch (e) {
@@ -220,9 +235,16 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
           throw const SessionConflictException();
         }
 
-        txn.update(sessionRef, {'status': SessionStatus.confirmed.name});
+        final confirmedAt = Timestamp.now();
+        txn.update(sessionRef, {
+          'status': SessionStatus.confirmed.name,
+          'updatedAt': confirmedAt,
+        });
         return SessionDto.fromEntity(
-          current.copyWith(status: SessionStatus.confirmed),
+          current.copyWith(
+            status: SessionStatus.confirmed,
+            updatedAt: confirmedAt.toDate(),
+          ),
         );
       });
     } on FirebaseException catch (e) {
@@ -348,6 +370,16 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
       status: data['status'] as String,
       location: data['location'] as String,
       notes: data['notes'] as String?,
+      // Every lifecycle field is read defensively: sessions booked before
+      // these keys existed have none of them, and those documents must
+      // still read back cleanly rather than throwing a cast error.
+      isRecurring: data['isRecurring'] as bool? ?? false,
+      recurrenceRule: data['recurrenceRule'] as String?,
+      checkInAtMillis: (data['checkInAt'] as Timestamp?)?.millisecondsSinceEpoch,
+      checkOutAtMillis: (data['checkOutAt'] as Timestamp?)?.millisecondsSinceEpoch,
+      conflictFlag: data['conflictFlag'] as bool? ?? false,
+      createdAtMillis: (data['createdAt'] as Timestamp?)?.millisecondsSinceEpoch,
+      updatedAtMillis: (data['updatedAt'] as Timestamp?)?.millisecondsSinceEpoch,
     );
   }
 }
