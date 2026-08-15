@@ -10,6 +10,8 @@ import 'package:elderly_companion/core/widgets/app_card.dart';
 import 'package:elderly_companion/core/widgets/app_status_icon.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
 import 'package:elderly_companion/core/widgets/loading_view.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session_status.dart';
 import 'package:elderly_companion/features/scheduling/presentation/providers/scheduling_providers.dart';
@@ -78,12 +80,27 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
     }
   }
 
+  /// The signed-in user's counterpart on this session — whichever of
+  /// requester/volunteer isn't them. `null` while auth state is still
+  /// loading or the user isn't signed in; the notes card below just stays
+  /// hidden in that case rather than guessing.
+  String? _otherPartyId(Session session, WidgetRef ref) {
+    final userId = ref.watch(authStateProvider).valueOrNull?.id;
+    if (userId == null) return null;
+    return userId == session.requesterId ? session.volunteerId : session.requesterId;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final session = widget.session;
     final formatted =
         DateFormat('EEEE, d MMMM · h:mm a').format(session.scheduledAt);
+    final otherPartyId = _otherPartyId(session, ref);
+    final communicationNotes = otherPartyId == null
+        ? null
+        : ref.watch(profileProvider(otherPartyId)).valueOrNull?.accessibilityPrefs
+            .communicationNotes;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -140,6 +157,28 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
                   ],
                 ),
               ),
+              if (communicationNotes != null && communicationNotes.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.record_voice_over_outlined,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text('Communication notes', style: theme.textTheme.titleLarge),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(communicationNotes, style: theme.textTheme.bodyLarge),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
               ..._actionsFor(session.status),
               const SizedBox(height: AppSpacing.md),
