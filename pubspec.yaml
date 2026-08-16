@@ -32,8 +32,15 @@ dependencies:
   firebase_messaging: ^15.0.4
   cloud_functions: ^5.0.4
 
+  # Typography — Atkinson Hyperlegible (body) + Lexend (headings). Both are
+  # legibility-first typefaces; see lib/core/theme/app_typography.dart.
+  google_fonts: ^6.2.1
+
   # Persistence for accessibility preferences
   shared_preferences: ^2.2.3
+
+  # Identity-document capture for auth_trust verification
+  image_picker: ^1.1.2
 
   intl: ^0.19.0
 

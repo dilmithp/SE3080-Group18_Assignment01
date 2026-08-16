@@ -57,3 +57,5 @@ coverage/
 # Env
 .env
 .env.*
+/.claude-flow
+/.claude-flow

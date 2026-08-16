@@ -6,8 +6,8 @@ import 'package:elderly_companion/features/auth_trust/data/datasources/auth_trus
 import 'package:elderly_companion/features/auth_trust/domain/entities/verification_request.dart';
 import 'package:elderly_companion/features/auth_trust/domain/repositories/verification_repository.dart';
 
-/// Satisfies [VerificationRepository]. Every method is stubbed — see
-/// AuthRepositoryImpl for the pattern to follow when implementing.
+/// Satisfies [VerificationRepository] by delegating to [_dataSource] and
+/// mapping data-layer exceptions to [Failure]s.
 class VerificationRepositoryImpl implements VerificationRepository {
   const VerificationRepositoryImpl(this._dataSource);
 

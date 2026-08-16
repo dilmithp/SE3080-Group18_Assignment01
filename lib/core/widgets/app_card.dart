@@ -18,20 +18,19 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = Card(
-      child: Padding(padding: padding, child: child),
-    );
+    final content = Padding(padding: padding, child: child);
+    if (onTap == null) return Card(child: content);
 
-    if (onTap == null) return card;
-
-    return Material(
-      color: Colors.transparent,
+    // The [InkWell] has to live *inside* the [Card]. Wrapping the card in one
+    // instead paints the ripple behind the card's own opaque Material, which
+    // swallows the press feedback entirely. `Clip.antiAlias` (from the card
+    // theme) is what keeps the splash inside the rounded corners.
+    return Card(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: AppTheme.minTapTarget),
-          child: card,
+          child: content,
         ),
       ),
     );
