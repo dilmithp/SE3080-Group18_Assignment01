@@ -38,38 +38,69 @@ class FindMatchesUseCase {
   /// function; explaining *why* a score came out the way it did is a
   /// presentation-facing concern layered on top, not a new heuristic, so
   /// it doesn't belong behind the Open/Closed strategy interface.
+  ///
+  /// Which reason *leads* the list tracks [MatchCriteria.strategyType]:
+  /// candidate cards show only `matchReasons.first` (see
+  /// MatchingScreen/MatchDetailsScreen), so under
+  /// [MatchingStrategyType.nearest] that should be the distance reason,
+  /// under [MatchingStrategyType.mostTrusted] the trust reason, and so on
+  /// — otherwise a card could headline "Highly trusted" for a search the
+  /// user explicitly asked to rank by distance.
   List<String> _explain(MatchCandidate candidate, MatchCriteria criteria) {
-    final reasons = <String>[];
-
-    if (criteria.origin != null) {
-      reasons.add('${candidate.distanceKm.toStringAsFixed(1)} km away');
-    } else if (candidate.profile.locality.isNotEmpty) {
-      reasons.add('In ${candidate.profile.locality}');
-    }
+    final proximityReason = criteria.origin != null
+        ? '${candidate.distanceKm.toStringAsFixed(1)} km away'
+        : candidate.profile.locality.isNotEmpty
+            ? 'In ${candidate.profile.locality}'
+            : null;
 
     final matchedSkills = criteria.requiredSkills
         .where((skill) => candidate.profile.skillsOffered.contains(skill))
         .toList();
-    if (matchedSkills.isNotEmpty) {
-      reasons.add('Offers ${matchedSkills.join(', ')}');
-    }
+    final skillReason =
+        matchedSkills.isEmpty ? null : 'Offers ${matchedSkills.join(', ')}';
 
-    if (candidate.trustScore >= 0.7) {
-      reasons.add(
-        'Highly trusted (${(candidate.trustScore.clamp(0.0, 1.0) * 100).round()}% trust score)',
-      );
-    }
+    final trustReason = candidate.trustScore >= 0.7
+        ? 'Highly trusted (${(candidate.trustScore.clamp(0.0, 1.0) * 100).round()}% trust score)'
+        : null;
 
+    String? availabilityReason;
     if (criteria.preferredTimes.isNotEmpty) {
       final availableDays =
           candidate.profile.availabilityWindows.map((w) => w.dayOfWeek).toSet();
       final matchedDays =
           criteria.preferredTimes.where(availableDays.contains).toList();
       if (matchedDays.isNotEmpty) {
-        reasons.add('Available ${matchedDays.join(', ')}');
+        availabilityReason = 'Available ${matchedDays.join(', ')}';
       }
     }
 
-    return reasons;
+    final ordered = switch (criteria.strategyType) {
+      MatchingStrategyType.nearest => [
+          proximityReason,
+          trustReason,
+          skillReason,
+          availabilityReason,
+        ],
+      MatchingStrategyType.mostTrusted => [
+          trustReason,
+          proximityReason,
+          skillReason,
+          availabilityReason,
+        ],
+      MatchingStrategyType.bestSkillMatch => [
+          skillReason,
+          proximityReason,
+          trustReason,
+          availabilityReason,
+        ],
+      MatchingStrategyType.balanced => [
+          proximityReason,
+          skillReason,
+          trustReason,
+          availabilityReason,
+        ],
+    };
+
+    return ordered.whereType<String>().toList();
   }
 }
