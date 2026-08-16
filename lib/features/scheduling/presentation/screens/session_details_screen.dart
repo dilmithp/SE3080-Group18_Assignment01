@@ -14,7 +14,9 @@ import 'package:elderly_companion/core/widgets/loading_view.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session.dart';
+import 'package:elderly_companion/features/scheduling/domain/entities/session_feedback.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session_status.dart';
+import 'package:elderly_companion/features/scheduling/domain/services/feedback_eligibility.dart';
 import 'package:elderly_companion/features/scheduling/presentation/providers/scheduling_providers.dart';
 
 /// Owner: Ranketh (features/scheduling). Real session details wired to
@@ -153,6 +155,22 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
       accessibilityControllerProvider.select((s) => s.simplifiedMode),
     );
 
+    // Only a completed session can have feedback, so an unfinished one is
+    // not worth a Firestore read — hand the rest of the build an empty
+    // result instead of subscribing.
+    final feedbackAsync = session.status == SessionStatus.completed
+        ? ref.watch(sessionFeedbackProvider(session.id))
+        : const AsyncValue<List<SessionFeedback>>.data(<SessionFeedback>[]);
+    final feedback = feedbackAsync.valueOrNull ?? const <SessionFeedback>[];
+    // Waiting for `hasValue` keeps the button from appearing and then
+    // disappearing once it turns out this user already rated the session.
+    final canLeaveFeedback = feedbackAsync.hasValue &&
+        const FeedbackEligibility().canLeaveFeedback(
+          session: session,
+          userId: currentUserId,
+          existingFeedback: feedback,
+        );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Center(
@@ -235,19 +253,36 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
               const SizedBox(height: AppSpacing.lg),
               ..._actionsFor(session, currentUserId),
               const SizedBox(height: AppSpacing.md),
-              if (session.status == SessionStatus.completed)
+              if (canLeaveFeedback)
                 AppButton(
                   label: 'Leave feedback',
                   icon: Icons.chat_bubble_outline,
                   secondary: true,
-                  onPressed: () =>
-                      context.push(RouteNames.sessionFeedbackPath(session.id)),
+                  onPressed: _openFeedbackForm,
                 ),
+              if (feedback.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
+                _FeedbackList(
+                  feedback: feedback,
+                  currentUserId: currentUserId,
+                  simplified: simplified,
+                ),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Opens the feedback form and re-reads the feedback list on the way
+  /// back, so a rating just submitted shows up here instead of leaving the
+  /// "Leave feedback" button offering a second, un-editable duplicate.
+  Future<void> _openFeedbackForm() async {
+    await context.push(RouteNames.sessionFeedbackPath(widget.session.id));
+    if (mounted) {
+      ref.invalidate(sessionFeedbackProvider(widget.session.id));
+    }
   }
 
   /// Buttons are derived from [SessionStatus.allowedNextStatuses] — the same
@@ -316,6 +351,118 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
       case SessionStatus.requested:
         return Icons.schedule_outlined;
     }
+  }
+}
+
+/// Feedback already recorded against this session. Read-only by design:
+/// `firestore.rules` denies updates on `session_feedback`, so there is
+/// nothing to edit here.
+class _FeedbackList extends StatelessWidget {
+  const _FeedbackList({
+    required this.feedback,
+    required this.currentUserId,
+    required this.simplified,
+  });
+
+  final List<SessionFeedback> feedback;
+  final String? currentUserId;
+  final bool simplified;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Newest first — the list is at most two entries today (one per
+    // participant), but ordering is the caller's job either way since
+    // Firestore returns query results unordered here.
+    final ordered = [...feedback]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.chat_bubble_outline, color: theme.colorScheme.primary),
+              const SizedBox(width: AppSpacing.sm),
+              Text('Feedback', style: theme.textTheme.titleLarge),
+            ],
+          ),
+          for (final entry in ordered) ...[
+            const SizedBox(height: AppSpacing.md),
+            _FeedbackEntry(
+              feedback: entry,
+              isMine: entry.raterId == currentUserId,
+              simplified: simplified,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FeedbackEntry extends StatelessWidget {
+  const _FeedbackEntry({
+    required this.feedback,
+    required this.isMine,
+    required this.simplified,
+  });
+
+  final SessionFeedback feedback;
+  final bool isMine;
+  final bool simplified;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final rating = feedback.rating;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          isMine ? 'Your feedback' : 'Their feedback',
+          style: theme.textTheme.titleMedium,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        // The number is spelled out beside the stars, and carries the
+        // semantics on its own, so a screen reader announces the rating
+        // rather than five identical icons.
+        Semantics(
+          label: '$rating out of 5',
+          child: ExcludeSemantics(
+            child: Row(
+              children: [
+                for (var star = 1; star <= 5; star++)
+                  Icon(
+                    star <= rating
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    size: 22,
+                    color: theme.colorScheme.tertiary,
+                  ),
+                const SizedBox(width: AppSpacing.sm),
+                Text('$rating out of 5', style: theme.textTheme.bodyLarge),
+              ],
+            ),
+          ),
+        ),
+        if (feedback.comment != null && feedback.comment!.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(feedback.comment!, style: theme.textTheme.bodyLarge),
+        ],
+        if (!simplified) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            DateFormat('d MMMM y').format(feedback.createdAt),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
 
