@@ -5,6 +5,9 @@ import 'package:elderly_companion/core/theme/accessibility/accessibility_control
 import 'package:elderly_companion/core/theme/accessibility/accessibility_state.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/profiles/presentation/providers/accessibility_profile_sync.dart';
+import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 
 /// Screen allowing elderly users and volunteers to customize accessibility preferences:
 /// - Dynamic Text Scaling (0.85x to 1.6x slider & quick presets)
@@ -13,6 +16,19 @@ import 'package:elderly_companion/core/widgets/app_card.dart';
 /// - Voice-Guided Prompts toggle
 class AccessibilitySettingsScreen extends ConsumerWidget {
   const AccessibilitySettingsScreen({super.key});
+
+  static Future<void> _writeThrough(WidgetRef ref, AccessibilityState state) async {
+    final userId = ref.read(authStateProvider).valueOrNull?.id;
+    if (userId == null) return;
+    final profile = await ref.read(profileProvider(userId).future);
+    if (profile == null) return;
+    await ref.read(updateProfileUseCaseProvider)(
+      profile.copyWith(
+        accessibilityPrefs:
+            mapAccessibilityStateToPreferences(state, profile.accessibilityPrefs),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
