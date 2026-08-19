@@ -3,6 +3,7 @@ import 'package:elderly_companion/core/error/failures.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_criteria.dart';
 import 'package:elderly_companion/features/matching/domain/repositories/matching_repository.dart';
+import 'package:elderly_companion/features/matching/domain/strategies/matching_strategy.dart';
 import 'package:elderly_companion/features/matching/domain/usecases/find_matches_usecase.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/accessibility_preferences.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/availability_window.dart';
@@ -143,6 +144,52 @@ void main() {
       result.fold(
         (_) => fail('Expected a Right(List<MatchCandidate>)'),
         (candidates) => expect(candidates.single.matchReasons, contains('Available Monday')),
+      );
+    });
+
+    test('resolves the strategy from criteria.strategyType, flipping the '
+        'ranking a different strategy would produce', () async {
+      // Deliberately crosses signals so balanced/nearest and mostTrusted
+      // disagree on the winner: near is closer but far is more trusted.
+      final near = MatchCandidate(
+        userId: 'near',
+        profile:
+            _profile(userId: 'near', locality: 'Colombo', skillsOffered: const ['gardening']),
+        distanceKm: 1,
+        trustScore: 0.3,
+        matchScore: 0.0,
+        matchReasons: const [],
+      );
+      final far = MatchCandidate(
+        userId: 'far',
+        profile:
+            _profile(userId: 'far', locality: 'Colombo', skillsOffered: const ['gardening']),
+        distanceKm: 9,
+        trustScore: 1.0,
+        matchScore: 0.0,
+        matchReasons: const [],
+      );
+
+      when(() => matchingRepository.findMatches(criteria))
+          .thenAnswer((_) async => Right([near, far]));
+      final balancedResult = await useCase(criteria);
+      balancedResult.fold(
+        (_) => fail('Expected a Right(List<MatchCandidate>)'),
+        (candidates) => expect(candidates.map((c) => c.userId), ['near', 'far']),
+      );
+
+      final trustFirstCriteria = criteria.copyWith(
+        strategyType: MatchingStrategyType.mostTrusted,
+      );
+      when(() => matchingRepository.findMatches(trustFirstCriteria))
+          .thenAnswer((_) async => Right([near, far]));
+      final trustFirstResult = await useCase(trustFirstCriteria);
+      trustFirstResult.fold(
+        (_) => fail('Expected a Right(List<MatchCandidate>)'),
+        (candidates) {
+          expect(candidates.map((c) => c.userId), ['far', 'near']);
+          expect(candidates.first.matchReasons.first, contains('Highly trusted'));
+        },
       );
     });
 
