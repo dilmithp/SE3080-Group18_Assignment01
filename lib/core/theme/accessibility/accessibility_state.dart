@@ -8,6 +8,7 @@ class AccessibilityState {
     this.textScale = 1.0,
     this.highContrast = false,
     this.simplifiedMode = false,
+    this.voiceGuidedPrompts = false,
   });
 
   /// Multiplier applied on top of the base 16sp body text. Clamped to
@@ -21,6 +22,9 @@ class AccessibilityState {
   /// targets, simpler wording. Individual screens read this flag and adapt.
   final bool simplifiedMode;
 
+  /// Enables voice-guided prompt descriptions and audio cues for screen elements.
+  final bool voiceGuidedPrompts;
+
   static const double minTextScale = 0.85;
   static const double maxTextScale = 1.6;
 
@@ -28,11 +32,13 @@ class AccessibilityState {
     double? textScale,
     bool? highContrast,
     bool? simplifiedMode,
+    bool? voiceGuidedPrompts,
   }) {
     return AccessibilityState(
       textScale: textScale ?? this.textScale,
       highContrast: highContrast ?? this.highContrast,
       simplifiedMode: simplifiedMode ?? this.simplifiedMode,
+      voiceGuidedPrompts: voiceGuidedPrompts ?? this.voiceGuidedPrompts,
     );
   }
 
@@ -40,6 +46,7 @@ class AccessibilityState {
         'textScale': textScale,
         'highContrast': highContrast,
         'simplifiedMode': simplifiedMode,
+        'voiceGuidedPrompts': voiceGuidedPrompts,
       };
 
   factory AccessibilityState.fromJson(Map<String, Object?> json) {
@@ -47,6 +54,7 @@ class AccessibilityState {
       textScale: (json['textScale'] as num?)?.toDouble() ?? 1.0,
       highContrast: json['highContrast'] as bool? ?? false,
       simplifiedMode: json['simplifiedMode'] as bool? ?? false,
+      voiceGuidedPrompts: json['voiceGuidedPrompts'] as bool? ?? false,
     );
   }
 
@@ -57,8 +65,10 @@ class AccessibilityState {
           runtimeType == other.runtimeType &&
           textScale == other.textScale &&
           highContrast == other.highContrast &&
-          simplifiedMode == other.simplifiedMode;
+          simplifiedMode == other.simplifiedMode &&
+          voiceGuidedPrompts == other.voiceGuidedPrompts;
 
   @override
-  int get hashCode => Object.hash(textScale, highContrast, simplifiedMode);
+  int get hashCode =>
+      Object.hash(textScale, highContrast, simplifiedMode, voiceGuidedPrompts);
 }

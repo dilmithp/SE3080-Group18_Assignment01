@@ -17,6 +17,7 @@ class RouteNames {
   // profiles
   static const String profile = '/profile';
   static const String editProfile = '/profile/edit';
+  static const String accessibilitySettings = '/accessibility-settings';
 
   // matching
   static const String matching = '/matching';
