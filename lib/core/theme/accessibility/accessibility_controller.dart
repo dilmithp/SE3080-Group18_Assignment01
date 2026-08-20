@@ -6,6 +6,7 @@ import 'package:elderly_companion/core/theme/accessibility/accessibility_state.d
 const _prefsKeyTextScale = 'accessibility.textScale';
 const _prefsKeyHighContrast = 'accessibility.highContrast';
 const _prefsKeySimplifiedMode = 'accessibility.simplifiedMode';
+const _prefsKeyVoiceGuidedPrompts = 'accessibility.voiceGuidedPrompts';
 
 /// Owns [AccessibilityState] and persists it with `shared_preferences` so
 /// preferences survive app restarts. Consumed by app.dart to drive
@@ -23,6 +24,7 @@ class AccessibilityController extends Notifier<AccessibilityState> {
       textScale: prefs.getDouble(_prefsKeyTextScale) ?? 1.0,
       highContrast: prefs.getBool(_prefsKeyHighContrast) ?? false,
       simplifiedMode: prefs.getBool(_prefsKeySimplifiedMode) ?? false,
+      voiceGuidedPrompts: prefs.getBool(_prefsKeyVoiceGuidedPrompts) ?? false,
     );
   }
 
@@ -46,6 +48,12 @@ class AccessibilityController extends Notifier<AccessibilityState> {
     state = state.copyWith(simplifiedMode: enabled);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefsKeySimplifiedMode, enabled);
+  }
+
+  Future<void> setVoiceGuidedPrompts(bool enabled) async {
+    state = state.copyWith(voiceGuidedPrompts: enabled);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKeyVoiceGuidedPrompts, enabled);
   }
 }
 

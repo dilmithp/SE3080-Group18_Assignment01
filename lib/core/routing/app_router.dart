@@ -13,6 +13,7 @@ import 'package:elderly_companion/features/auth_trust/presentation/screens/verif
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/matching/presentation/screens/match_details_screen.dart';
 import 'package:elderly_companion/features/matching/presentation/screens/matching_screen.dart';
+import 'package:elderly_companion/features/profiles/presentation/screens/accessibility_settings_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/edit_profile_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/profile_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/scheduling_screen.dart';
@@ -99,6 +100,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: RouteNames.editProfile,
         name: 'editProfile',
         builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.accessibilitySettings,
+        name: 'accessibilitySettings',
+        builder: (context, state) => const AccessibilitySettingsScreen(),
       ),
       GoRoute(
         path: RouteNames.matching,
