@@ -8,6 +8,7 @@ import 'package:elderly_companion/features/scheduling/domain/entities/session.da
 import 'package:elderly_companion/features/scheduling/domain/entities/session_feedback.dart';
 import 'package:elderly_companion/features/scheduling/domain/repositories/feedback_repository.dart';
 import 'package:elderly_companion/features/scheduling/domain/repositories/session_repository.dart';
+import 'package:elderly_companion/features/scheduling/domain/usecases/book_recurring_session_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/book_session_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/confirm_session_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/submit_feedback_usecase.dart';
@@ -34,6 +35,14 @@ final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
 
 final bookSessionUseCaseProvider = Provider<BookSessionUseCase>((ref) {
   return BookSessionUseCase(ref.watch(sessionRepositoryProvider));
+});
+
+/// Not reachable from any screen yet — the recurring-booking UI is a
+/// separate piece of work; this is here so the wiring is in one place when
+/// it lands.
+final bookRecurringSessionUseCaseProvider =
+    Provider<BookRecurringSessionUseCase>((ref) {
+  return BookRecurringSessionUseCase(ref.watch(sessionRepositoryProvider));
 });
 
 final confirmSessionUseCaseProvider = Provider<ConfirmSessionUseCase>((ref) {

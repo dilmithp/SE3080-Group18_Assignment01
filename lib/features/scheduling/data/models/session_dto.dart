@@ -34,6 +34,7 @@ class SessionDto with _$SessionDto {
     int? checkInAtMillis,
     int? checkOutAtMillis,
     @Default(false) bool conflictFlag,
+    String? seriesId,
     int? createdAtMillis,
     int? updatedAtMillis,
   }) = _SessionDto;
@@ -55,6 +56,7 @@ class SessionDto with _$SessionDto {
         checkInAtMillis: entity.checkInAt?.millisecondsSinceEpoch,
         checkOutAtMillis: entity.checkOutAt?.millisecondsSinceEpoch,
         conflictFlag: entity.conflictFlag,
+        seriesId: entity.seriesId,
         createdAtMillis: entity.createdAt?.millisecondsSinceEpoch,
         updatedAtMillis: entity.updatedAt?.millisecondsSinceEpoch,
       );
@@ -73,6 +75,7 @@ class SessionDto with _$SessionDto {
         checkInAt: _dateOrNull(checkInAtMillis),
         checkOutAt: _dateOrNull(checkOutAtMillis),
         conflictFlag: conflictFlag,
+        seriesId: seriesId,
         createdAt: _dateOrNull(createdAtMillis),
         updatedAt: _dateOrNull(updatedAtMillis),
       );

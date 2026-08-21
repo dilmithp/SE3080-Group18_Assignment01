@@ -16,6 +16,11 @@ import 'package:elderly_companion/features/scheduling/domain/services/session_co
 /// above. Throws the exceptions in core/error/exceptions.dart; repository
 /// implementations translate those into [Failure]s.
 abstract class SchedulingRemoteDataSource {
+  /// Writes one `requested` session.
+  ///
+  /// The recurrence arguments describe the series this session belongs to,
+  /// if any; they are written as given and interpreted nowhere in this
+  /// layer. A one-off booking leaves all three at their defaults.
   Future<SessionDto> bookSession({
     required String requesterId,
     required String volunteerId,
@@ -23,6 +28,9 @@ abstract class SchedulingRemoteDataSource {
     required int durationMinutes,
     required String location,
     String? notes,
+    bool isRecurring = false,
+    String? recurrenceRule,
+    String? seriesId,
   });
 
   Future<SessionDto> updateSessionStatus({
@@ -72,6 +80,9 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
     required int durationMinutes,
     required String location,
     String? notes,
+    bool isRecurring = false,
+    String? recurrenceRule,
+    String? seriesId,
   }) async {
     try {
       final id = _firestoreService.newDocId(AppConfig.sessionsCollection);
@@ -92,10 +103,11 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
           'status': SessionStatus.requested.name,
           'location': location,
           'notes': notes,
-          // A booking is one-off until the recurring-sessions work lands,
-          // and unflagged until something detects an overlap it could not
-          // see at request time.
-          'isRecurring': false,
+          // Unflagged until something detects an overlap that could not be
+          // seen at request time.
+          'isRecurring': isRecurring,
+          'recurrenceRule': recurrenceRule,
+          'seriesId': seriesId,
           'conflictFlag': false,
           'createdAt': now,
           'updatedAt': now,
@@ -110,6 +122,9 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
         status: SessionStatus.requested.name,
         location: location,
         notes: notes,
+        isRecurring: isRecurring,
+        recurrenceRule: recurrenceRule,
+        seriesId: seriesId,
         createdAtMillis: now.millisecondsSinceEpoch,
         updatedAtMillis: now.millisecondsSinceEpoch,
       );
@@ -378,6 +393,7 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
       checkInAtMillis: (data['checkInAt'] as Timestamp?)?.millisecondsSinceEpoch,
       checkOutAtMillis: (data['checkOutAt'] as Timestamp?)?.millisecondsSinceEpoch,
       conflictFlag: data['conflictFlag'] as bool? ?? false,
+      seriesId: data['seriesId'] as String?,
       createdAtMillis: (data['createdAt'] as Timestamp?)?.millisecondsSinceEpoch,
       updatedAtMillis: (data['updatedAt'] as Timestamp?)?.millisecondsSinceEpoch,
     );

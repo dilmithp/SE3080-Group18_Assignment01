@@ -23,6 +23,7 @@ class Session {
     this.checkInAt,
     this.checkOutAt,
     this.conflictFlag = false,
+    this.seriesId,
     this.createdAt,
     this.updatedAt,
   });
@@ -60,6 +61,12 @@ class Session {
   /// session for a human to look at, it does not block anything.
   final bool conflictFlag;
 
+  /// Groups the occurrences of one recurring booking: every session
+  /// generated from the same [recurrenceRule] carries the same value, so a
+  /// series can be found, listed or cancelled as a unit. `null` on a one-off
+  /// booking and on anything written before this field existed.
+  final String? seriesId;
+
   /// Audit timestamps. Nullable because documents written before these
   /// fields existed carry neither.
   final DateTime? createdAt;
@@ -83,6 +90,7 @@ class Session {
     DateTime? checkInAt,
     DateTime? checkOutAt,
     bool? conflictFlag,
+    String? seriesId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -100,6 +108,7 @@ class Session {
       checkInAt: checkInAt ?? this.checkInAt,
       checkOutAt: checkOutAt ?? this.checkOutAt,
       conflictFlag: conflictFlag ?? this.conflictFlag,
+      seriesId: seriesId ?? this.seriesId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -123,6 +132,7 @@ class Session {
           checkInAt == other.checkInAt &&
           checkOutAt == other.checkOutAt &&
           conflictFlag == other.conflictFlag &&
+          seriesId == other.seriesId &&
           createdAt == other.createdAt &&
           updatedAt == other.updatedAt;
 
@@ -141,6 +151,7 @@ class Session {
         checkInAt,
         checkOutAt,
         conflictFlag,
+        seriesId,
         createdAt,
         updatedAt,
       );

@@ -24,6 +24,9 @@ class SessionRepositoryImpl implements SessionRepository {
     required int durationMinutes,
     required String location,
     String? notes,
+    bool isRecurring = false,
+    String? recurrenceRule,
+    String? seriesId,
   }) async {
     try {
       final dto = await _dataSource.bookSession(
@@ -33,6 +36,9 @@ class SessionRepositoryImpl implements SessionRepository {
         durationMinutes: durationMinutes,
         location: location,
         notes: notes,
+        isRecurring: isRecurring,
+        recurrenceRule: recurrenceRule,
+        seriesId: seriesId,
       );
       return Right(dto.toEntity());
     } on NotFoundException catch (e) {
