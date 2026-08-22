@@ -55,6 +55,31 @@ class AccessibilityController extends Notifier<AccessibilityState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefsKeyVoiceGuidedPrompts, enabled);
   }
+
+  /// Merges in values read from the signed-in user's persisted profile
+  /// (`UserProfile.accessibilityPrefs`, owned by features/profiles) without
+  /// this class knowing that type exists — the caller maps that shape down
+  /// to these three primitives first. [voiceGuidedPrompts] has no persisted
+  /// counterpart, so it's left untouched.
+  Future<void> seedFrom({
+    required bool highContrast,
+    required bool simplifiedMode,
+    required double textScale,
+  }) async {
+    final clamped = textScale.clamp(
+      AccessibilityState.minTextScale,
+      AccessibilityState.maxTextScale,
+    );
+    state = state.copyWith(
+      highContrast: highContrast,
+      simplifiedMode: simplifiedMode,
+      textScale: clamped,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKeyHighContrast, highContrast);
+    await prefs.setBool(_prefsKeySimplifiedMode, simplifiedMode);
+    await prefs.setDouble(_prefsKeyTextScale, clamped);
+  }
 }
 
 final accessibilityControllerProvider =
