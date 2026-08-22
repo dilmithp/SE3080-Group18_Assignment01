@@ -26,10 +26,21 @@ class MatchingScreen extends ConsumerStatefulWidget {
   ConsumerState<MatchingScreen> createState() => _MatchingScreenState();
 }
 
+const _weekdays = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
+
 class _MatchingScreenState extends ConsumerState<MatchingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _localityController = TextEditingController();
   final _skillsController = TextEditingController();
+  final Set<String> _preferredDays = {};
 
   bool _isSearching = false;
   bool _hasSearched = false;
@@ -74,7 +85,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
           locality: _localityController.text.trim(),
           radiusKm: 5,
           requiredSkills: skills,
-          preferredTimes: const [],
+          preferredTimes: _preferredDays.toList(),
           origin: origin,
         ),
       );
@@ -133,6 +144,30 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
                           helperText: 'Separate with commas',
                           controller: _skillsController,
                           prefixIcon: Icons.star_outline,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Preferred days (optional)',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: [
+                            for (final day in _weekdays)
+                              FilterChip(
+                                label: Text(day),
+                                selected: _preferredDays.contains(day),
+                                onSelected: (selected) => setState(() {
+                                  if (selected) {
+                                    _preferredDays.add(day);
+                                  } else {
+                                    _preferredDays.remove(day);
+                                  }
+                                }),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: AppSpacing.md),
                         AppButton(

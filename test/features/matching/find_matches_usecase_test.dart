@@ -5,6 +5,7 @@ import 'package:elderly_companion/features/matching/domain/entities/match_criter
 import 'package:elderly_companion/features/matching/domain/repositories/matching_repository.dart';
 import 'package:elderly_companion/features/matching/domain/usecases/find_matches_usecase.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/accessibility_preferences.dart';
+import 'package:elderly_companion/features/profiles/domain/entities/availability_window.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/geo_coordinates.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,7 @@ UserProfile _profile({
   required String userId,
   required String locality,
   List<String> skillsOffered = const [],
+  List<AvailabilityWindow> availabilityWindows = const [],
 }) {
   return UserProfile(
     userId: userId,
@@ -29,7 +31,7 @@ UserProfile _profile({
     geoPoint: const GeoCoordinates(latitude: 0, longitude: 0),
     skillsOffered: skillsOffered,
     helpNeeded: const [],
-    availabilityWindows: const [],
+    availabilityWindows: availabilityWindows,
     accessibilityPrefs: const AccessibilityPreferences(
       largeText: false,
       highContrast: false,
@@ -110,6 +112,37 @@ void main() {
           expect(reasons, contains('Offers gardening'));
           expect(reasons, contains('Highly trusted (90% trust score)'));
         },
+      );
+    });
+
+    test('attaches an Available reason when preferredTimes overlap the '
+        "candidate's availability", () async {
+      final criteriaWithPreferredTimes = criteria.copyWith(
+        preferredTimes: const ['Monday', 'Friday'],
+      );
+      final available = MatchCandidate(
+        userId: 'user-3',
+        profile: _profile(
+          userId: 'user-3',
+          locality: 'Colombo',
+          skillsOffered: const ['gardening'],
+          availabilityWindows: const [
+            AvailabilityWindow(dayOfWeek: 'Monday', startTime: '09:00', endTime: '12:00'),
+          ],
+        ),
+        distanceKm: 1,
+        trustScore: 0.5,
+        matchScore: 0.0,
+        matchReasons: const [],
+      );
+      when(() => matchingRepository.findMatches(criteriaWithPreferredTimes))
+          .thenAnswer((_) async => Right([available]));
+
+      final result = await useCase(criteriaWithPreferredTimes);
+
+      result.fold(
+        (_) => fail('Expected a Right(List<MatchCandidate>)'),
+        (candidates) => expect(candidates.single.matchReasons, contains('Available Monday')),
       );
     });
 

@@ -62,6 +62,16 @@ class FindMatchesUseCase {
       );
     }
 
+    if (criteria.preferredTimes.isNotEmpty) {
+      final availableDays =
+          candidate.profile.availabilityWindows.map((w) => w.dayOfWeek).toSet();
+      final matchedDays =
+          criteria.preferredTimes.where(availableDays.contains).toList();
+      if (matchedDays.isNotEmpty) {
+        reasons.add('Available ${matchedDays.join(', ')}');
+      }
+    }
+
     return reasons;
   }
 }
