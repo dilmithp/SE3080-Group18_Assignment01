@@ -98,8 +98,48 @@ class MatchDetailsScreen extends ConsumerWidget {
                               icon: Icons.diversity_3_outlined,
                             ),
                           ),
+                          if (candidate.distanceKm > 0) ...[
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: _StatTile(
+                                label: 'Distance',
+                                value: '${candidate.distanceKm.toStringAsFixed(1)} km',
+                                icon: Icons.near_me_outlined,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
+                      if (candidate.matchReasons.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        AppCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Why this match', style: theme.textTheme.titleLarge),
+                              const SizedBox(height: AppSpacing.sm),
+                              for (final reason in candidate.matchReasons)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle_outline,
+                                        size: 18,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: AppSpacing.sm),
+                                      Expanded(
+                                        child: Text(reason, style: theme.textTheme.bodyLarge),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                       if (candidate.profile.bio.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.md),
                         AppCard(

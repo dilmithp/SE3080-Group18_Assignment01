@@ -23,11 +23,45 @@ class FindMatchesUseCase {
   Future<Either<Failure, List<MatchCandidate>>> call(MatchCriteria criteria) async {
     final result = await _repository.findMatches(criteria);
     return result.map((candidates) {
-      final scored = candidates
-          .map((c) => c.copyWith(matchScore: _strategy.score(c, criteria)))
-          .toList()
+      final scored = candidates.map((c) {
+        final withScore = c.copyWith(matchScore: _strategy.score(c, criteria));
+        return withScore.copyWith(
+          matchReasons: _explain(withScore, criteria),
+        );
+      }).toList()
         ..sort((a, b) => b.matchScore.compareTo(a.matchScore));
       return scored;
     });
+  }
+
+  /// Human-readable reasons behind a candidate's rank, surfaced to the
+  /// user alongside the match score. Deliberately kept separate from
+  /// [MatchingStrategy.score] — the strategy stays a pure scoring
+  /// function; explaining *why* a score came out the way it did is a
+  /// presentation-facing concern layered on top, not a new heuristic, so
+  /// it doesn't belong behind the Open/Closed strategy interface.
+  List<String> _explain(MatchCandidate candidate, MatchCriteria criteria) {
+    final reasons = <String>[];
+
+    if (criteria.origin != null) {
+      reasons.add('${candidate.distanceKm.toStringAsFixed(1)} km away');
+    } else if (candidate.profile.locality.isNotEmpty) {
+      reasons.add('In ${candidate.profile.locality}');
+    }
+
+    final matchedSkills = criteria.requiredSkills
+        .where((skill) => candidate.profile.skillsOffered.contains(skill))
+        .toList();
+    if (matchedSkills.isNotEmpty) {
+      reasons.add('Offers ${matchedSkills.join(', ')}');
+    }
+
+    if (candidate.trustScore >= 0.7) {
+      reasons.add(
+        'Highly trusted (${(candidate.trustScore.clamp(0.0, 1.0) * 100).round()}% trust score)',
+      );
+    }
+
+    return reasons;
   }
 }

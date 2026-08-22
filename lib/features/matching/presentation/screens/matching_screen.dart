@@ -11,9 +11,11 @@ import 'package:elderly_companion/core/widgets/app_card.dart';
 import 'package:elderly_companion/core/widgets/app_status_icon.dart';
 import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/core/widgets/empty_view.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_criteria.dart';
 import 'package:elderly_companion/features/matching/presentation/providers/matching_providers.dart';
+import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 
 /// Owner: Wijekoon (features/matching). Real search form wired to
 /// [FindMatchesUseCase]; results render as ranked, tappable cards.
@@ -54,12 +56,26 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
           .map((skill) => skill.trim())
           .where((skill) => skill.isNotEmpty)
           .toList();
+
+      // Resolve the searcher's own coordinates so results can be ranked
+      // and filtered by real distance rather than locality name alone.
+      // Best-effort: a searcher with no saved profile yet simply falls
+      // back to locality-only matching (origin stays null). Awaiting
+      // `.future` (rather than reading the provider's cached AsyncValue)
+      // avoids a race against the stream's first emission on a screen
+      // that never otherwise watches this provider.
+      final searcherId = ref.read(authStateProvider).valueOrNull?.id;
+      final origin = searcherId == null
+          ? null
+          : (await ref.read(profileProvider(searcherId).future))?.geoPoint;
+
       final result = await useCase(
         MatchCriteria(
           locality: _localityController.text.trim(),
           radiusKm: 5,
           requiredSkills: skills,
           preferredTimes: const [],
+          origin: origin,
         ),
       );
       result.fold(
@@ -260,6 +276,18 @@ class _CandidateCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (candidate.matchReasons.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    candidate.matchReasons.first,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
