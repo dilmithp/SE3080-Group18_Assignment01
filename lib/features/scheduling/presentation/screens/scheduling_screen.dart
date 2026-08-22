@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:elderly_companion/core/routing/route_names.dart';
+import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
 import 'package:elderly_companion/core/widgets/app_status_icon.dart';
@@ -52,6 +53,9 @@ class _SessionList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionsAsync = ref.watch(sessionsForUserProvider(userId));
+    final simplified = ref.watch(
+      accessibilityControllerProvider.select((s) => s.simplifiedMode),
+    );
 
     return sessionsAsync.when(
       loading: () => const LoadingView(),
@@ -71,7 +75,8 @@ class _SessionList extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           itemCount: sorted.length,
           separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-          itemBuilder: (context, index) => _SessionCard(session: sorted[index]),
+          itemBuilder: (context, index) =>
+              _SessionCard(session: sorted[index], simplified: simplified),
         );
       },
     );
@@ -79,9 +84,10 @@ class _SessionList extends ConsumerWidget {
 }
 
 class _SessionCard extends StatelessWidget {
-  const _SessionCard({required this.session});
+  const _SessionCard({required this.session, required this.simplified});
 
   final Session session;
+  final bool simplified;
 
   ({Color background, Color foreground}) _statusColors(ColorScheme scheme) {
     return switch (session.status) {
@@ -116,7 +122,7 @@ class _SessionCard extends StatelessWidget {
         children: [
           AppStatusIcon(
             icon: Icons.event_note_outlined,
-            size: 56,
+            size: simplified ? 72 : 56,
             background: colors.background,
             foreground: colors.foreground,
           ),
@@ -125,16 +131,21 @@ class _SessionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(formatted, style: theme.textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${session.location} · ${session.durationMinutes} min',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  formatted,
+                  style: simplified ? theme.textTheme.headlineSmall : theme.textTheme.titleLarge,
                 ),
+                if (!simplified) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '${session.location} · ${session.durationMinutes} min',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.xs),
                 Container(
                   padding: const EdgeInsets.symmetric(

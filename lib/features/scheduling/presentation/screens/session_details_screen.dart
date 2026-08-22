@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:elderly_companion/core/routing/route_names.dart';
+import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
@@ -101,6 +102,12 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
         ? null
         : ref.watch(profileProvider(otherPartyId)).valueOrNull?.accessibilityPrefs
             .communicationNotes;
+    // Drops the duration figure (secondary detail — location and time are
+    // what actually matter for showing up) and enlarges the header icon,
+    // matching the same simplified treatment as matching's screens.
+    final simplified = ref.watch(
+      accessibilityControllerProvider.select((s) => s.simplifiedMode),
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -115,7 +122,7 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
                   children: [
                     AppStatusIcon(
                       icon: Icons.event_note_outlined,
-                      size: 64,
+                      size: simplified ? 88 : 64,
                       background: theme.colorScheme.tertiaryContainer,
                       foreground: theme.colorScheme.onTertiaryContainer,
                     ),
@@ -145,11 +152,13 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _DetailRow(icon: Icons.place_outlined, label: session.location),
-                    const SizedBox(height: AppSpacing.sm),
-                    _DetailRow(
-                      icon: Icons.timer_outlined,
-                      label: '${session.durationMinutes} minutes',
-                    ),
+                    if (!simplified) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      _DetailRow(
+                        icon: Icons.timer_outlined,
+                        label: '${session.durationMinutes} minutes',
+                      ),
+                    ],
                     if (session.notes != null && session.notes!.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.sm),
                       _DetailRow(icon: Icons.notes_outlined, label: session.notes!),

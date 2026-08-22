@@ -6,6 +6,7 @@ import 'package:elderly_companion/core/theme/accessibility/accessibility_state.d
 import 'package:elderly_companion/core/widgets/app_button.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/profiles/presentation/providers/accessibility_profile_sync.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 
 /// Screen allowing elderly users and volunteers to customize accessibility preferences:
@@ -29,11 +30,8 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
     if (profile == null) return;
     await ref.read(updateProfileUseCaseProvider)(
       profile.copyWith(
-        accessibilityPrefs: profile.accessibilityPrefs.copyWith(
-          highContrast: state.highContrast,
-          simplifiedInterface: state.simplifiedMode,
-          largeText: state.textScale > 1.0,
-        ),
+        accessibilityPrefs:
+            mapAccessibilityStateToPreferences(state, profile.accessibilityPrefs),
       ),
     );
   }

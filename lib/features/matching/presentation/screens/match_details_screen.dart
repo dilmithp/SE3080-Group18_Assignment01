@@ -365,6 +365,12 @@ class _BookingSheetState extends ConsumerState<_BookingSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Duration is a fiddly numeric field to type on a phone; simplified mode
+    // drops it and keeps the 60-minute default from _durationController's
+    // initial value instead of asking for it.
+    final simplified = ref.watch(
+      accessibilityControllerProvider.select((s) => s.simplifiedMode),
+    );
 
     return Padding(
       padding: EdgeInsets.only(
@@ -402,19 +408,21 @@ class _BookingSheetState extends ConsumerState<_BookingSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              label: 'Duration (minutes)',
-              controller: _durationController,
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                final minutes = int.tryParse(value ?? '');
-                if (minutes == null || minutes <= 0) {
-                  return 'Enter a duration in minutes.';
-                }
-                return null;
-              },
-            ),
+            if (!simplified) ...[
+              const SizedBox(height: AppSpacing.md),
+              AppTextField(
+                label: 'Duration (minutes)',
+                controller: _durationController,
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  final minutes = int.tryParse(value ?? '');
+                  if (minutes == null || minutes <= 0) {
+                    return 'Enter a duration in minutes.';
+                  }
+                  return null;
+                },
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             AppTextField(
               label: 'Location',
