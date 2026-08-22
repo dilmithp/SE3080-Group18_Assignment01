@@ -93,6 +93,14 @@ class FirebaseMatchingRemoteDataSource implements MatchingRemoteDataSource {
           continue;
         }
 
+        if (preferredTimes.isNotEmpty) {
+          final availableDays =
+              profileEntity.availabilityWindows.map((w) => w.dayOfWeek).toSet();
+          if (!preferredTimes.any(availableDays.contains)) {
+            continue;
+          }
+        }
+
         final trustScore = await _firestoreService.getDocument<double>(
               collectionPath: AppConfig.trustScoresCollection,
               docId: doc.id,
