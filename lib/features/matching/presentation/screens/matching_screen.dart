@@ -15,6 +15,7 @@ import 'package:elderly_companion/core/widgets/empty_view.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_criteria.dart';
+import 'package:elderly_companion/features/matching/domain/strategies/matching_strategy.dart';
 import 'package:elderly_companion/features/matching/presentation/providers/matching_providers.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 
@@ -42,6 +43,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
   final _localityController = TextEditingController();
   final _skillsController = TextEditingController();
   final Set<String> _preferredDays = {};
+  MatchingStrategyType _strategyType = MatchingStrategyType.balanced;
 
   bool _isSearching = false;
   bool _hasSearched = false;
@@ -88,6 +90,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
           requiredSkills: skills,
           preferredTimes: _preferredDays.toList(),
           origin: origin,
+          strategyType: _strategyType,
         ),
       );
       result.fold(
@@ -154,6 +157,25 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
                             helperText: 'Separate with commas',
                             controller: _skillsController,
                             prefixIcon: Icons.star_outline,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            'Rank matches by',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Wrap(
+                            spacing: AppSpacing.sm,
+                            runSpacing: AppSpacing.sm,
+                            children: [
+                              for (final type in MatchingStrategyType.values)
+                                ChoiceChip(
+                                  label: Text(type.label),
+                                  selected: _strategyType == type,
+                                  onSelected: (_) =>
+                                      setState(() => _strategyType = type),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: AppSpacing.md),
                           Text(

@@ -1,3 +1,4 @@
+import 'package:elderly_companion/features/matching/domain/strategies/matching_strategy.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/geo_coordinates.dart';
 
 /// Pure domain entity — zero `package:firebase_*` imports. Describes the
@@ -9,6 +10,7 @@ class MatchCriteria {
     required this.requiredSkills,
     required this.preferredTimes,
     this.origin,
+    this.strategyType = MatchingStrategyType.balanced,
   });
 
   final String locality;
@@ -22,12 +24,16 @@ class MatchCriteria {
   /// skipped and candidates fall back to locality-only matching.
   final GeoCoordinates? origin;
 
+  /// Which [MatchingStrategy] [FindMatchesUseCase] ranks results with.
+  final MatchingStrategyType strategyType;
+
   MatchCriteria copyWith({
     String? locality,
     double? radiusKm,
     List<String>? requiredSkills,
     List<String>? preferredTimes,
     GeoCoordinates? origin,
+    MatchingStrategyType? strategyType,
   }) {
     return MatchCriteria(
       locality: locality ?? this.locality,
@@ -35,6 +41,7 @@ class MatchCriteria {
       requiredSkills: requiredSkills ?? this.requiredSkills,
       preferredTimes: preferredTimes ?? this.preferredTimes,
       origin: origin ?? this.origin,
+      strategyType: strategyType ?? this.strategyType,
     );
   }
 
@@ -47,7 +54,8 @@ class MatchCriteria {
           radiusKm == other.radiusKm &&
           _listEquals(requiredSkills, other.requiredSkills) &&
           _listEquals(preferredTimes, other.preferredTimes) &&
-          origin == other.origin;
+          origin == other.origin &&
+          strategyType == other.strategyType;
 
   @override
   int get hashCode => Object.hash(
@@ -56,6 +64,7 @@ class MatchCriteria {
         Object.hashAll(requiredSkills),
         Object.hashAll(preferredTimes),
         origin,
+        strategyType,
       );
 }
 

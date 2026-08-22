@@ -8,6 +8,36 @@ abstract class MatchingStrategy {
   double score(MatchCandidate candidate, MatchCriteria criteria);
 }
 
+/// Runtime-facing counterpart to the compile-time Open/Closed pattern above
+/// — lets a search request pick which [MatchingStrategy] ranks its results
+/// (see [MatchCriteria.strategyType]) without the caller needing to
+/// construct or know about the concrete strategy classes. Adding a new
+/// strategy means adding one case here alongside its class.
+enum MatchingStrategyType {
+  balanced('Balanced'),
+  nearest('Nearest'),
+  mostTrusted('Most trusted'),
+  bestSkillMatch('Best skill match');
+
+  const MatchingStrategyType(this.label);
+
+  /// Short, user-facing name — e.g. for a strategy picker on MatchingScreen.
+  final String label;
+
+  MatchingStrategy toStrategy() {
+    switch (this) {
+      case MatchingStrategyType.balanced:
+        return const DefaultMatchingStrategy();
+      case MatchingStrategyType.nearest:
+        return const ProximityFirstStrategy();
+      case MatchingStrategyType.mostTrusted:
+        return const TrustFirstStrategy();
+      case MatchingStrategyType.bestSkillMatch:
+        return const SkillMatchFirstStrategy();
+    }
+  }
+}
+
 /// Weighted blend of proximity, trust and skill overlap. Pure, synchronous
 /// and Firebase-free by design — it operates only on values already
 /// resolved onto [MatchCandidate] and [MatchCriteria].
