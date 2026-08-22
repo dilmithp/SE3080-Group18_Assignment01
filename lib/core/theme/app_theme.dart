@@ -23,18 +23,31 @@ class AppTheme {
 
   static const double minTapTarget = 48;
 
-  /// Both variants are built once and cached. [light] is called from
+  /// Tap target and breathing room used instead of [minTapTarget] /
+  /// [AppSpacing] when [AccessibilityState.simplifiedMode] is on — bigger
+  /// targets and fewer visible secondary actions are what that flag exists
+  /// for (see accessibility_state.dart).
+  static const double minTapTargetSimplified = 64;
+
+  /// All four variants are built once and cached. [light] is called from
   /// `App.build`, and `ColorScheme.fromSeed` runs a full tonal-palette
   /// quantisation there is no reason to repeat on every rebuild.
-  static final ThemeData _standard = _build(_Palette.standard);
-  static final ThemeData _contrast = _build(_Palette.contrast);
+  static final ThemeData _standard = _build(_Palette.standard, simplified: false);
+  static final ThemeData _contrast = _build(_Palette.contrast, simplified: false);
+  static final ThemeData _standardSimplified =
+      _build(_Palette.standard, simplified: true);
+  static final ThemeData _contrastSimplified =
+      _build(_Palette.contrast, simplified: true);
 
-  static ThemeData light({bool highContrast = false}) =>
-      highContrast ? _contrast : _standard;
+  static ThemeData light({bool highContrast = false, bool simplifiedMode = false}) {
+    if (simplifiedMode) return highContrast ? _contrastSimplified : _standardSimplified;
+    return highContrast ? _contrast : _standard;
+  }
 
-  static ThemeData _build(_Palette p) {
+  static ThemeData _build(_Palette p, {required bool simplified}) {
     final text =
         p.isHighContrast ? AppTypography.highContrast : AppTypography.standard;
+    final tapTarget = simplified ? minTapTargetSimplified : minTapTarget;
 
     return ThemeData(
       useMaterial3: true,
@@ -45,17 +58,17 @@ class AppTheme {
       materialTapTargetSize: MaterialTapTargetSize.padded,
       visualDensity: VisualDensity.standard,
       shadowColor: p.shadow,
-      iconTheme: IconThemeData(color: p.onBackground, size: 28),
+      iconTheme: IconThemeData(color: p.onBackground, size: simplified ? 32 : 28),
       appBarTheme: _appBar(p, text),
-      elevatedButtonTheme: _elevatedButton(p, text),
-      outlinedButtonTheme: _outlinedButton(p, text),
-      textButtonTheme: _textButton(p, text),
-      iconButtonTheme: _iconButton(),
-      inputDecorationTheme: _input(p, text),
+      elevatedButtonTheme: _elevatedButton(p, text, tapTarget),
+      outlinedButtonTheme: _outlinedButton(p, text, tapTarget),
+      textButtonTheme: _textButton(p, text, tapTarget),
+      iconButtonTheme: _iconButton(tapTarget),
+      inputDecorationTheme: _input(p, text, simplified),
       cardTheme: _card(p),
       dialogTheme: _dialog(p, text),
       snackBarTheme: _snackBar(p, text),
-      listTileTheme: _listTile(p, text),
+      listTileTheme: _listTile(p, text, tapTarget),
       switchTheme: _switches(p),
       sliderTheme: _slider(p, text),
       chipTheme: _chip(p, text),
@@ -121,7 +134,11 @@ class AppTheme {
     );
   }
 
-  static ElevatedButtonThemeData _elevatedButton(_Palette p, TextTheme text) {
+  static ElevatedButtonThemeData _elevatedButton(
+    _Palette p,
+    TextTheme text,
+    double tapTarget,
+  ) {
     return ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: p.primary,
@@ -131,7 +148,7 @@ class AppTheme {
         // washed-out grey-on-grey.
         disabledBackgroundColor: p.surfaceContainerHighest,
         disabledForegroundColor: p.textSecondary,
-        minimumSize: const Size(double.infinity, minTapTarget),
+        minimumSize: Size(double.infinity, tapTarget),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.sm,
@@ -149,13 +166,17 @@ class AppTheme {
     );
   }
 
-  static OutlinedButtonThemeData _outlinedButton(_Palette p, TextTheme text) {
+  static OutlinedButtonThemeData _outlinedButton(
+    _Palette p,
+    TextTheme text,
+    double tapTarget,
+  ) {
     return OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: p.primary,
         backgroundColor: p.surface,
         disabledForegroundColor: p.disabled,
-        minimumSize: const Size(double.infinity, minTapTarget),
+        minimumSize: Size(double.infinity, tapTarget),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.sm,
@@ -167,11 +188,15 @@ class AppTheme {
     );
   }
 
-  static TextButtonThemeData _textButton(_Palette p, TextTheme text) {
+  static TextButtonThemeData _textButton(
+    _Palette p,
+    TextTheme text,
+    double tapTarget,
+  ) {
     return TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: p.primary,
-        minimumSize: const Size(64, minTapTarget),
+        minimumSize: Size(64, tapTarget),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
@@ -184,10 +209,10 @@ class AppTheme {
 
   /// Icon buttons inherit their colour from the surrounding [IconTheme]; this
   /// only guarantees the tap target and the ripple shape.
-  static IconButtonThemeData _iconButton() {
+  static IconButtonThemeData _iconButton(double tapTarget) {
     return IconButtonThemeData(
       style: IconButton.styleFrom(
-        minimumSize: const Size(minTapTarget, minTapTarget),
+        minimumSize: Size(tapTarget, tapTarget),
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.pillAll),
       ),
     );
@@ -197,7 +222,7 @@ class AppTheme {
   /// always floats, so it stays readable while the user types (low-vision
   /// users lose a label-as-placeholder the moment they enter text) and can
   /// never overlap the value.
-  static InputDecorationThemeData _input(_Palette p, TextTheme text) {
+  static InputDecorationThemeData _input(_Palette p, TextTheme text, bool simplified) {
     OutlineInputBorder side(Color color, double width) => OutlineInputBorder(
           borderRadius: AppRadius.controlAll,
           borderSide: BorderSide(color: color, width: width),
@@ -206,9 +231,9 @@ class AppTheme {
     return InputDecorationThemeData(
       filled: true,
       fillColor: p.surface,
-      contentPadding: const EdgeInsets.symmetric(
+      contentPadding: EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
+        vertical: simplified ? AppSpacing.lg : AppSpacing.md,
       ),
       floatingLabelBehavior: FloatingLabelBehavior.always,
       border: side(p.border, 1.5),
@@ -269,13 +294,14 @@ class AppTheme {
     );
   }
 
-  static ListTileThemeData _listTile(_Palette p, TextTheme text) {
+  static ListTileThemeData _listTile(_Palette p, TextTheme text, double tapTarget) {
     return ListTileThemeData(
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
       ),
       minVerticalPadding: AppSpacing.sm,
+      minTileHeight: tapTarget,
       iconColor: p.primary,
       textColor: p.onSurface,
       titleTextStyle: text.bodyLarge,

@@ -17,7 +17,10 @@ class App extends ConsumerWidget {
     return MaterialApp.router(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(highContrast: accessibility.highContrast),
+      theme: AppTheme.light(
+        highContrast: accessibility.highContrast,
+        simplifiedMode: accessibility.simplifiedMode,
+      ),
       routerConfig: router,
       builder: (context, child) {
         final mediaQuery = MediaQuery.of(context);
