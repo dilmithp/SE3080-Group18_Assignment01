@@ -43,7 +43,7 @@ void main() {
         password: 'password123',
       );
 
-      expect(result, Right(testUser));
+      expect(result, Right<Failure, AppUser>(testUser));
       verify(
         () => authRepository.signInWithEmail(
           email: 'ada@example.com',

@@ -1,12 +1,13 @@
 import 'package:dartz/dartz.dart';
 
+import 'package:elderly_companion/core/error/exceptions.dart';
 import 'package:elderly_companion/core/error/failures.dart';
 import 'package:elderly_companion/features/auth_trust/data/datasources/auth_trust_remote_data_source.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/verification_request.dart';
 import 'package:elderly_companion/features/auth_trust/domain/repositories/verification_repository.dart';
 
-/// Satisfies [VerificationRepository]. Every method is stubbed — see
-/// AuthRepositoryImpl for the pattern to follow when implementing.
+/// Satisfies [VerificationRepository] by delegating to [_dataSource] and
+/// mapping data-layer exceptions to [Failure]s.
 class VerificationRepositoryImpl implements VerificationRepository {
   const VerificationRepositoryImpl(this._dataSource);
 
@@ -17,12 +18,30 @@ class VerificationRepositoryImpl implements VerificationRepository {
     required String userId,
     required String documentUrl,
   }) async {
-    throw UnimplementedError('TODO(Pathirana): implement via $_dataSource');
+    try {
+      final dto = await _dataSource.submitVerificationRequest(
+        userId: userId,
+        documentUrl: documentUrl,
+      );
+      return Right(dto.toEntity());
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on PermissionException catch (e) {
+      return Left(PermissionFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 
   @override
   Stream<VerificationRequest?> watchVerificationStatus(String userId) {
-    throw UnimplementedError('TODO(Pathirana): implement via $_dataSource');
+    return _dataSource
+        .watchVerificationStatus(userId)
+        .map((dto) => dto?.toEntity());
   }
 
   @override
@@ -31,6 +50,23 @@ class VerificationRepositoryImpl implements VerificationRepository {
     required String reviewerId,
     required bool approve,
   }) async {
-    throw UnimplementedError('TODO(Pathirana): implement via $_dataSource');
+    try {
+      final dto = await _dataSource.reviewVerificationRequest(
+        requestId: requestId,
+        reviewerId: reviewerId,
+        approve: approve,
+      );
+      return Right(dto.toEntity());
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on PermissionException catch (e) {
+      return Left(PermissionFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 }

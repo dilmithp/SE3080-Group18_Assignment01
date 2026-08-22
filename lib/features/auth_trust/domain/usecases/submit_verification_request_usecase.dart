@@ -14,8 +14,9 @@ class SubmitVerificationRequestUseCase {
     required String userId,
     required String documentUrl,
   }) async {
-    throw UnimplementedError(
-      'TODO(Pathirana): implement via ${_repository.runtimeType}',
+    return _repository.submitVerificationRequest(
+      userId: userId,
+      documentUrl: documentUrl,
     );
   }
 }

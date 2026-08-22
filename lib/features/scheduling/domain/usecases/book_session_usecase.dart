@@ -18,8 +18,13 @@ class BookSessionUseCase {
     required String location,
     String? notes,
   }) async {
-    throw UnimplementedError(
-      'TODO(Ranketh): implement via ${_repository.runtimeType}',
+    return _repository.bookSession(
+      requesterId: requesterId,
+      volunteerId: volunteerId,
+      scheduledAt: scheduledAt,
+      durationMinutes: durationMinutes,
+      location: location,
+      notes: notes,
     );
   }
 }

@@ -17,8 +17,11 @@ class SignUpWithEmailUseCase {
     required String phone,
     required UserRole role,
   }) async {
-    throw UnimplementedError(
-      'TODO(Pathirana): implement sign-up via ${_repository.runtimeType}',
+    return _repository.signUpWithEmail(
+      email: email,
+      password: password,
+      phone: phone,
+      role: role,
     );
   }
 }

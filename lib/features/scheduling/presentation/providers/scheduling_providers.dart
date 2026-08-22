@@ -4,6 +4,7 @@ import 'package:elderly_companion/core/di/injection.dart';
 import 'package:elderly_companion/features/scheduling/data/datasources/scheduling_remote_data_source.dart';
 import 'package:elderly_companion/features/scheduling/data/repositories/feedback_repository_impl.dart';
 import 'package:elderly_companion/features/scheduling/data/repositories/session_repository_impl.dart';
+import 'package:elderly_companion/features/scheduling/domain/entities/session.dart';
 import 'package:elderly_companion/features/scheduling/domain/repositories/feedback_repository.dart';
 import 'package:elderly_companion/features/scheduling/domain/repositories/session_repository.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/book_session_usecase.dart';
@@ -39,4 +40,17 @@ final updateSessionStatusUseCaseProvider = Provider<UpdateSessionStatusUseCase>(
 
 final submitFeedbackUseCaseProvider = Provider<SubmitFeedbackUseCase>((ref) {
   return SubmitFeedbackUseCase(ref.watch(feedbackRepositoryProvider));
+});
+
+/// Live list of sessions (as requester or volunteer) for a user.
+final sessionsForUserProvider =
+    StreamProvider.family<List<Session>, String>((ref, userId) {
+  return ref.watch(sessionRepositoryProvider).watchSessionsForUser(userId);
+});
+
+/// A single session by id. Throws the [Failure] on a miss so it surfaces
+/// through [AsyncValue.error] the same way the stream-backed providers do.
+final sessionProvider = FutureProvider.family<Session, String>((ref, sessionId) async {
+  final result = await ref.watch(sessionRepositoryProvider).getSession(sessionId);
+  return result.fold((failure) => throw failure, (session) => session);
 });

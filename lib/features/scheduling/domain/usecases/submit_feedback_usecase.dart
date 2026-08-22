@@ -16,8 +16,11 @@ class SubmitFeedbackUseCase {
     required int rating,
     String? comment,
   }) async {
-    throw UnimplementedError(
-      'TODO(Ranketh): implement via ${_repository.runtimeType}',
+    return _repository.submitFeedback(
+      sessionId: sessionId,
+      raterId: raterId,
+      rating: rating,
+      comment: comment,
     );
   }
 }

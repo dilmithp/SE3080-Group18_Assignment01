@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 
+import 'package:elderly_companion/core/error/exceptions.dart';
 import 'package:elderly_companion/core/error/failures.dart';
 import 'package:elderly_companion/features/scheduling/data/datasources/scheduling_remote_data_source.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session.dart';
@@ -23,7 +24,25 @@ class SessionRepositoryImpl implements SessionRepository {
     required String location,
     String? notes,
   }) async {
-    throw UnimplementedError('TODO(Ranketh): implement via $_dataSource');
+    try {
+      final dto = await _dataSource.bookSession(
+        requesterId: requesterId,
+        volunteerId: volunteerId,
+        scheduledAt: scheduledAt,
+        durationMinutes: durationMinutes,
+        location: location,
+        notes: notes,
+      );
+      return Right(dto.toEntity());
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(UnknownFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 
   @override
@@ -31,16 +50,43 @@ class SessionRepositoryImpl implements SessionRepository {
     required String sessionId,
     required SessionStatus status,
   }) async {
-    throw UnimplementedError('TODO(Ranketh): implement via $_dataSource');
+    try {
+      final dto = await _dataSource.updateSessionStatus(
+        sessionId: sessionId,
+        status: status,
+      );
+      return Right(dto.toEntity());
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(UnknownFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 
   @override
   Future<Either<Failure, Session>> getSession(String sessionId) async {
-    throw UnimplementedError('TODO(Ranketh): implement via $_dataSource');
+    try {
+      final dto = await _dataSource.getSession(sessionId);
+      return Right(dto.toEntity());
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(UnknownFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 
   @override
   Stream<List<Session>> watchSessionsForUser(String userId) {
-    throw UnimplementedError('TODO(Ranketh): implement via $_dataSource');
+    return _dataSource
+        .watchSessionsForUser(userId)
+        .map((dtos) => dtos.map((d) => d.toEntity()).toList());
   }
 }

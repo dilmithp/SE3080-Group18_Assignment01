@@ -6,6 +6,8 @@ import 'package:elderly_companion/features/auth_trust/data/datasources/auth_trus
 import 'package:elderly_companion/features/auth_trust/data/repositories/auth_repository_impl.dart';
 import 'package:elderly_companion/features/auth_trust/data/repositories/trust_score_repository_impl.dart';
 import 'package:elderly_companion/features/auth_trust/data/repositories/verification_repository_impl.dart';
+import 'package:elderly_companion/features/auth_trust/domain/entities/app_user.dart';
+import 'package:elderly_companion/features/auth_trust/domain/entities/verification_request.dart';
 import 'package:elderly_companion/features/auth_trust/domain/repositories/auth_repository.dart';
 import 'package:elderly_companion/features/auth_trust/domain/repositories/trust_score_repository.dart';
 import 'package:elderly_companion/features/auth_trust/domain/repositories/verification_repository.dart';
@@ -27,6 +29,13 @@ final authTrustRemoteDataSourceProvider = Provider<AuthTrustRemoteDataSource>((r
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(ref.watch(authTrustRemoteDataSourceProvider));
+});
+
+/// The real, Firebase-backed replacement for `app_router.dart`'s old
+/// placeholder `isAuthenticatedProvider`. Emits the currently signed-in
+/// [AppUser], or `null` when signed out.
+final authStateProvider = StreamProvider<AppUser?>((ref) {
+  return ref.watch(authRepositoryProvider).authStateChanges();
 });
 
 final verificationRepositoryProvider = Provider<VerificationRepository>((ref) {
@@ -52,4 +61,11 @@ final submitVerificationRequestUseCaseProvider =
 
 final getTrustScoreUseCaseProvider = Provider<GetTrustScoreUseCase>((ref) {
   return GetTrustScoreUseCase(ref.watch(trustScoreRepositoryProvider));
+});
+
+/// Live verification status for a given user, for
+/// [VerificationScreen] to render without polling.
+final verificationStatusProvider =
+    StreamProvider.family<VerificationRequest?, String>((ref, userId) {
+  return ref.watch(verificationRepositoryProvider).watchVerificationStatus(userId);
 });

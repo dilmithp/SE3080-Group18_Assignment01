@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'package:elderly_companion/core/error/failures.dart';
+import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
+import 'package:elderly_companion/core/widgets/app_status_icon.dart';
 
 /// Full-space error state with a retry action. Prefer
 /// [ErrorView.fromFailure] when displaying a [Failure] from a repository
@@ -9,6 +11,7 @@ import 'package:elderly_companion/core/widgets/app_button.dart';
 class ErrorView extends StatelessWidget {
   const ErrorView({
     required this.message,
+    this.title = 'Something went wrong',
     this.onRetry,
     super.key,
   });
@@ -18,30 +21,39 @@ class ErrorView extends StatelessWidget {
   }
 
   final String message;
+
+  /// Plain-language headline. The detail in [message] is often technical, so
+  /// this carries the meaning for a reader who will not parse the rest.
+  final String title;
+
   final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(message, textAlign: TextAlign.center),
-            if (onRetry != null) ...[
-              const SizedBox(height: 24),
-              AppButton(label: 'Try again', onPressed: onRetry),
-            ],
-          ],
+    final theme = Theme.of(context);
+
+    return StatusLayout(
+      children: [
+        AppStatusIcon(
+          icon: Icons.error_outline,
+          background: theme.colorScheme.errorContainer,
+          foreground: theme.colorScheme.onErrorContainer,
         ),
-      ),
+        const SizedBox(height: AppSpacing.lg),
+        Text(title, style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          message,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        if (onRetry != null) ...[
+          const SizedBox(height: AppSpacing.xl),
+          AppButton(label: 'Try again', icon: Icons.refresh, onPressed: onRetry),
+        ],
+      ],
     );
   }
 }

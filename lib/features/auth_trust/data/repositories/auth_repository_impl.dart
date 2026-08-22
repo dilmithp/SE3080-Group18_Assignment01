@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 
+import 'package:elderly_companion/core/error/exceptions.dart';
 import 'package:elderly_companion/core/error/failures.dart';
 import 'package:elderly_companion/features/auth_trust/data/datasources/auth_trust_remote_data_source.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/app_user.dart';
@@ -21,7 +22,25 @@ class AuthRepositoryImpl implements AuthRepository {
     required String phone,
     required UserRole role,
   }) async {
-    throw UnimplementedError('TODO(Pathirana): implement via $_dataSource');
+    try {
+      final dto = await _dataSource.signUpWithEmail(
+        email: email,
+        password: password,
+        phone: phone,
+        role: role,
+      );
+      return Right(dto.toEntity());
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on PermissionException catch (e) {
+      return Left(PermissionFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 
   @override
@@ -29,16 +48,43 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
   }) async {
-    throw UnimplementedError('TODO(Pathirana): implement via $_dataSource');
+    try {
+      final dto = await _dataSource.signInWithEmail(
+        email: email,
+        password: password,
+      );
+      return Right(dto.toEntity());
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on PermissionException catch (e) {
+      return Left(PermissionFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 
   @override
   Future<Either<Failure, Unit>> signOut() async {
-    throw UnimplementedError('TODO(Pathirana): implement via $_dataSource');
+    try {
+      await _dataSource.signOut();
+      return const Right(unit);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on PermissionException catch (e) {
+      return Left(PermissionFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
   }
 
   @override
   Stream<AppUser?> authStateChanges() {
-    throw UnimplementedError('TODO(Pathirana): implement via $_dataSource');
+    return _dataSource.authStateChanges().map((dto) => dto?.toEntity());
   }
 }
