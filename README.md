@@ -1,4 +1,4 @@
-# Elderly Companionship & Micro-Volunteering Platform
+# Elderly Companionship And Micro-Volunteering Platform
 
 SE3080 — Group 018. A mobile app connecting elderly individuals in a
 locality with student/community volunteers for companionship and small
