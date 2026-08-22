@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:elderly_companion/core/error/failures.dart';
 import 'package:elderly_companion/core/routing/route_names.dart';
+import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/utils/validators.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
@@ -112,6 +113,14 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Simplified mode drops the optional refinement fields (skills,
+    // preferred days) so the form is just "where" + one big button —
+    // fewer decisions before the primary action, per AccessibilityState's
+    // documented intent.
+    final simplified = ref.watch(
+      accessibilityControllerProvider.select((s) => s.simplifiedMode),
+    );
+
     return Scaffold(
       appBar: AppBar(title: const Text('Find a match')),
       body: SafeArea(
@@ -137,38 +146,40 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
                           validator: (value) =>
                               Validators.required(value, fieldName: 'Locality'),
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                        AppTextField(
-                          label: 'Skills (optional)',
-                          hint: 'e.g. gardening, cooking',
-                          helperText: 'Separate with commas',
-                          controller: _skillsController,
-                          prefixIcon: Icons.star_outline,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          'Preferred days (optional)',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          children: [
-                            for (final day in _weekdays)
-                              FilterChip(
-                                label: Text(day),
-                                selected: _preferredDays.contains(day),
-                                onSelected: (selected) => setState(() {
-                                  if (selected) {
-                                    _preferredDays.add(day);
-                                  } else {
-                                    _preferredDays.remove(day);
-                                  }
-                                }),
-                              ),
-                          ],
-                        ),
+                        if (!simplified) ...[
+                          const SizedBox(height: AppSpacing.md),
+                          AppTextField(
+                            label: 'Skills (optional)',
+                            hint: 'e.g. gardening, cooking',
+                            helperText: 'Separate with commas',
+                            controller: _skillsController,
+                            prefixIcon: Icons.star_outline,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            'Preferred days (optional)',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Wrap(
+                            spacing: AppSpacing.sm,
+                            runSpacing: AppSpacing.sm,
+                            children: [
+                              for (final day in _weekdays)
+                                FilterChip(
+                                  label: Text(day),
+                                  selected: _preferredDays.contains(day),
+                                  onSelected: (selected) => setState(() {
+                                    if (selected) {
+                                      _preferredDays.add(day);
+                                    } else {
+                                      _preferredDays.remove(day);
+                                    }
+                                  }),
+                                ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.md),
                         AppButton(
                           label: 'Find matches',
@@ -184,6 +195,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
                     hasSearched: _hasSearched,
                     failure: _failure,
                     results: _results,
+                    simplified: simplified,
                     onRetry: _search,
                     onTap: _openCandidate,
                   ),
@@ -202,6 +214,7 @@ class _Results extends StatelessWidget {
     required this.hasSearched,
     required this.failure,
     required this.results,
+    required this.simplified,
     required this.onRetry,
     required this.onTap,
   });
@@ -209,6 +222,7 @@ class _Results extends StatelessWidget {
   final bool hasSearched;
   final Failure? failure;
   final List<MatchCandidate> results;
+  final bool simplified;
   final VoidCallback onRetry;
   final ValueChanged<MatchCandidate> onTap;
 
@@ -260,7 +274,11 @@ class _Results extends StatelessWidget {
     return Column(
       children: [
         for (final candidate in results) ...[
-          _CandidateCard(candidate: candidate, onTap: () => onTap(candidate)),
+          _CandidateCard(
+            candidate: candidate,
+            simplified: simplified,
+            onTap: () => onTap(candidate),
+          ),
           const SizedBox(height: AppSpacing.sm),
         ],
       ],
@@ -269,15 +287,64 @@ class _Results extends StatelessWidget {
 }
 
 class _CandidateCard extends StatelessWidget {
-  const _CandidateCard({required this.candidate, required this.onTap});
+  const _CandidateCard({
+    required this.candidate,
+    required this.simplified,
+    required this.onTap,
+  });
 
   final MatchCandidate candidate;
+  final bool simplified;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final matchPercent = (candidate.matchScore.clamp(0.0, 1.0) * 100).round();
+    final name = candidate.profile.displayName.isEmpty
+        ? 'Companion'
+        : candidate.profile.displayName;
+
+    // Simplified mode keeps only the two things an elderly user needs to
+    // decide whether to open this candidate — who, and the single biggest
+    // reason they matched — and drops the secondary skills/locality line
+    // and the numeric match-percent badge.
+    if (simplified) {
+      return AppCard(
+        onTap: onTap,
+        child: Row(
+          children: [
+            AppStatusIcon(
+              icon: Icons.person,
+              size: 72,
+              background: theme.colorScheme.primaryContainer,
+              foreground: theme.colorScheme.onPrimaryContainer,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: theme.textTheme.headlineSmall),
+                  if (candidate.matchReasons.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      candidate.matchReasons.first,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return AppCard(
       onTap: onTap,
@@ -294,12 +361,7 @@ class _CandidateCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  candidate.profile.displayName.isEmpty
-                      ? 'Companion'
-                      : candidate.profile.displayName,
-                  style: theme.textTheme.titleLarge,
-                ),
+                Text(name, style: theme.textTheme.titleLarge),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   candidate.profile.skillsOffered.isEmpty
