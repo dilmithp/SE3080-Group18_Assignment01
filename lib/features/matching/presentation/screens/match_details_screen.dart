@@ -151,6 +151,36 @@ class MatchDetailsScreen extends ConsumerWidget {
                           ),
                         ),
                       ],
+                      if (candidate.profile.accessibilityPrefs.communicationNotes
+                              ?.isNotEmpty ==
+                          true) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        AppCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.record_voice_over_outlined,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Text(
+                                    'Communication notes',
+                                    style: theme.textTheme.titleLarge,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                candidate.profile.accessibilityPrefs.communicationNotes!,
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       if (candidate.profile.bio.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.md),
                         AppCard(
