@@ -25,6 +25,7 @@ class MatchingRepositoryImpl implements MatchingRepository {
         radiusKm: criteria.radiusKm,
         requiredSkills: criteria.requiredSkills,
         preferredTimes: criteria.preferredTimes,
+        origin: criteria.origin,
       );
       return Right(dtos.map((d) => d.toEntity()).toList());
     } on NetworkException catch (e) {

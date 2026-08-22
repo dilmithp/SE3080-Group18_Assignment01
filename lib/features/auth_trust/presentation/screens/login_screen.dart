@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:elderly_companion/core/routing/route_names.dart';
+import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/utils/validators.dart';
+import 'package:elderly_companion/core/widgets/app_brand_mark.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
 import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
@@ -63,47 +65,82 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // No app bar: login is a root `go` destination with nothing to go back
+    // to, so an empty bar would only cost vertical space on the one screen
+    // that should feel like a front door.
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign in')),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Welcome back',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.xl,
+            ),
+            child: ConstrainedBox(
+              constraints:
+                  const BoxConstraints(maxWidth: AppLayout.maxContentWidth),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(child: AppBrandMark(size: 88)),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      'Welcome back',
+                      style: theme.textTheme.headlineLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Sign in to see your matches and upcoming sessions.',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    AppTextField(
+                      label: 'Email',
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      prefixIcon: Icons.mail_outline,
+                      validator: Validators.email,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Password',
+                      controller: _passwordController,
+                      obscureText: true,
+                      textInputAction: TextInputAction.done,
+                      prefixIcon: Icons.lock_outline,
+                      validator: Validators.password,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    AppButton(
+                      label: 'Sign in',
+                      isLoading: _isSubmitting,
+                      onPressed: _submit,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      'New to Elderly Companion?',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    TextButton(
+                      onPressed: () => context.push(RouteNames.signup),
+                      child: const Text('Create an account'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                AppTextField(
-                  label: 'Email',
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: Validators.email,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Password',
-                  controller: _passwordController,
-                  obscureText: true,
-                  validator: Validators.password,
-                ),
-                const SizedBox(height: 24),
-                AppButton(
-                  label: 'Sign in',
-                  isLoading: _isSubmitting,
-                  onPressed: _submit,
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => context.push(RouteNames.signup),
-                  child: const Text('Create an account'),
-                ),
-              ],
+              ),
             ),
           ),
         ),

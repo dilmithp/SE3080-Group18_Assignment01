@@ -7,6 +7,7 @@ import 'package:elderly_companion/features/auth_trust/data/repositories/auth_rep
 import 'package:elderly_companion/features/auth_trust/data/repositories/trust_score_repository_impl.dart';
 import 'package:elderly_companion/features/auth_trust/data/repositories/verification_repository_impl.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/app_user.dart';
+import 'package:elderly_companion/features/auth_trust/domain/entities/verification_request.dart';
 import 'package:elderly_companion/features/auth_trust/domain/repositories/auth_repository.dart';
 import 'package:elderly_companion/features/auth_trust/domain/repositories/trust_score_repository.dart';
 import 'package:elderly_companion/features/auth_trust/domain/repositories/verification_repository.dart';
@@ -60,4 +61,11 @@ final submitVerificationRequestUseCaseProvider =
 
 final getTrustScoreUseCaseProvider = Provider<GetTrustScoreUseCase>((ref) {
   return GetTrustScoreUseCase(ref.watch(trustScoreRepositoryProvider));
+});
+
+/// Live verification status for a given user, for
+/// [VerificationScreen] to render without polling.
+final verificationStatusProvider =
+    StreamProvider.family<VerificationRequest?, String>((ref, userId) {
+  return ref.watch(verificationRepositoryProvider).watchVerificationStatus(userId);
 });

@@ -10,8 +10,10 @@ import 'package:elderly_companion/features/auth_trust/presentation/providers/aut
 import 'package:elderly_companion/features/auth_trust/presentation/screens/login_screen.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/screens/signup_screen.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/screens/verification_screen.dart';
+import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/matching/presentation/screens/match_details_screen.dart';
 import 'package:elderly_companion/features/matching/presentation/screens/matching_screen.dart';
+import 'package:elderly_companion/features/profiles/presentation/screens/accessibility_settings_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/edit_profile_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/profile_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/scheduling_screen.dart';
@@ -100,6 +102,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const EditProfileScreen(),
       ),
       GoRoute(
+        path: RouteNames.accessibilitySettings,
+        name: 'accessibilitySettings',
+        builder: (context, state) => const AccessibilitySettingsScreen(),
+      ),
+      GoRoute(
         path: RouteNames.matching,
         name: 'matching',
         builder: (context, state) => const MatchingScreen(),
@@ -109,6 +116,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'matchDetails',
         builder: (context, state) => MatchDetailsScreen(
           candidateId: state.pathParameters['candidateId']!,
+          candidate: state.extra as MatchCandidate?,
         ),
       ),
       GoRoute(

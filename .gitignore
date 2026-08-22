@@ -57,3 +57,7 @@ coverage/
 # Env
 .env
 .env.*
+/.claude-flow
+/.claude-flow
+/macos
+/.claude-flow
