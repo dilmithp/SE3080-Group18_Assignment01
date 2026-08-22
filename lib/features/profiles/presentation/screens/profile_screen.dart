@@ -159,6 +159,36 @@ class _ProfileView extends StatelessWidget {
                 _TagSection(title: 'Help needed', tags: profile.helpNeeded),
                 const SizedBox(height: AppSpacing.md),
               ],
+              if (profile.availabilityWindows.isNotEmpty) ...[
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Availability', style: theme.textTheme.titleLarge),
+                      const SizedBox(height: AppSpacing.sm),
+                      for (final window in profile.availabilityWindows)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.schedule_outlined,
+                                size: 18,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: AppSpacing.xs),
+                              Text(
+                                '${window.dayOfWeek} ${window.startTime}–${window.endTime}',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
             ],
           ),
         ),

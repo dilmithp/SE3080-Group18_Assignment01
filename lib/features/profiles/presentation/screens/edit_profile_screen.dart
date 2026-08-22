@@ -11,16 +11,32 @@ import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/core/widgets/empty_view.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
 import 'package:elderly_companion/core/widgets/loading_view.dart';
+import 'package:elderly_companion/core/widgets/app_card.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/accessibility_preferences.dart';
+import 'package:elderly_companion/features/profiles/domain/entities/availability_window.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/geo_coordinates.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 
+const _weekdays = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
+
+String _formatTimeOfDay(TimeOfDay time) =>
+    '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+
 /// Owner: Perera (features/profiles). Real form for creating/editing the
 /// signed-in user's profile, wired to [GetProfileUseCase]'s live stream and
-/// [UpdateProfileUseCase]. Availability windows and accessibility
-/// preferences aren't editable here yet — they pass through unchanged.
+/// [UpdateProfileUseCase]. Accessibility preferences aren't editable here
+/// yet — they pass through unchanged (see AccessibilitySettingsScreen for
+/// the separate, on-device accessibility controls).
 class EditProfileScreen extends ConsumerWidget {
   const EditProfileScreen({super.key});
 
@@ -82,6 +98,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
   late final TextEditingController _localityController;
   late final TextEditingController _skillsController;
   late final TextEditingController _helpController;
+  late List<AvailabilityWindow> _availabilityWindows;
 
   String? _photoUrl;
   bool _isSaving = false;
@@ -114,6 +131,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     _localityController = TextEditingController(text: base.locality);
     _skillsController = TextEditingController(text: base.skillsOffered.join(', '));
     _helpController = TextEditingController(text: base.helpNeeded.join(', '));
+    _availabilityWindows = List.of(base.availabilityWindows);
     _photoUrl = base.photoUrl;
   }
 
@@ -158,6 +176,111 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     }
   }
 
+  Future<void> _addAvailabilityWindow() async {
+    final messenger = ScaffoldMessenger.of(context);
+    var selectedDay = _weekdays.first;
+    var startTime = const TimeOfDay(hour: 9, minute: 0);
+    var endTime = const TimeOfDay(hour: 12, minute: 0);
+
+    final added = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: AppSpacing.lg,
+            right: AppSpacing.lg,
+            top: AppSpacing.lg,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Add availability', style: Theme.of(sheetContext).textTheme.headlineMedium),
+              const SizedBox(height: AppSpacing.lg),
+              DropdownButtonFormField<String>(
+                initialValue: selectedDay,
+                decoration: const InputDecoration(labelText: 'Day'),
+                items: [
+                  for (final day in _weekdays)
+                    DropdownMenuItem(value: day, child: Text(day)),
+                ],
+                onChanged: (value) {
+                  if (value != null) setSheetState(() => selectedDay = value);
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                          context: sheetContext,
+                          initialTime: startTime,
+                        );
+                        if (picked != null) setSheetState(() => startTime = picked);
+                      },
+                      icon: const Icon(Icons.access_time),
+                      label: Text('From ${startTime.format(sheetContext)}'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                          context: sheetContext,
+                          initialTime: endTime,
+                        );
+                        if (picked != null) setSheetState(() => endTime = picked);
+                      },
+                      icon: const Icon(Icons.access_time),
+                      label: Text('To ${endTime.format(sheetContext)}'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              AppButton(
+                label: 'Add',
+                onPressed: () {
+                  final start = _formatTimeOfDay(startTime);
+                  final end = _formatTimeOfDay(endTime);
+                  if (start.compareTo(end) >= 0) {
+                    messenger
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(
+                        const SnackBar(content: Text('End time must be after start time.')),
+                      );
+                    return;
+                  }
+                  setState(() {
+                    _availabilityWindows.add(
+                      AvailabilityWindow(
+                        dayOfWeek: selectedDay,
+                        startTime: start,
+                        endTime: end,
+                      ),
+                    );
+                  });
+                  Navigator.of(sheetContext).pop(true);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (added ?? false) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Availability added.')));
+    }
+  }
+
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -169,6 +292,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
         locality: _localityController.text.trim(),
         skillsOffered: _parseTags(_skillsController.text),
         helpNeeded: _parseTags(_helpController.text),
+        availabilityWindows: _availabilityWindows,
         photoUrl: _photoUrl,
       );
       final useCase = ref.read(updateProfileUseCaseProvider);
@@ -257,6 +381,56 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
                     hint: 'e.g. grocery runs, company on walks',
                     helperText: 'Separate with commas',
                     controller: _helpController,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('Availability', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: AppSpacing.sm),
+                  if (_availabilityWindows.isEmpty)
+                    Text(
+                      'No availability added yet.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    )
+                  else
+                    AppCard(
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < _availabilityWindows.length; i++)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                bottom: i == _availabilityWindows.length - 1 ? 0 : AppSpacing.sm,
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.schedule_outlined),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: Text(
+                                      '${_availabilityWindows[i].dayOfWeek} '
+                                      '${_availabilityWindows[i].startTime}–'
+                                      '${_availabilityWindows[i].endTime}',
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close),
+                                    tooltip: 'Remove',
+                                    onPressed: () => setState(
+                                      () => _availabilityWindows.removeAt(i),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: AppSpacing.sm),
+                  AppButton(
+                    label: 'Add availability',
+                    icon: Icons.add,
+                    secondary: true,
+                    onPressed: _addAvailabilityWindow,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppButton(
