@@ -62,9 +62,16 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
         (failure) => messenger
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(failure.message))),
-        (_) => messenger
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text('Session ${status.label.toLowerCase()}.'))),
+        (_) {
+          // sessionProvider is a one-shot FutureProvider (getSession), not a
+          // stream — without this, the screen keeps showing the pre-update
+          // status and stale action buttons until the user navigates away
+          // and back.
+          ref.invalidate(sessionProvider(widget.session.id));
+          messenger
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text('Session ${status.label.toLowerCase()}.')));
+        },
       );
     } finally {
       if (mounted) setState(() => _isUpdating = false);
