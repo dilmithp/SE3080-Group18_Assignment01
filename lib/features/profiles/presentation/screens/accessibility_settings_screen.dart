@@ -37,7 +37,7 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           AppButton(
             label: 'Reset Accessibility Defaults',
-            variant: AppButtonVariant.outlined,
+            secondary: true,
             onPressed: () async {
               await controller.setTextScale(1.0);
               await controller.setHighContrast(false);

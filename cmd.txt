@@ -1,0 +1,31 @@
+# Elderly Companion — Project Commands
+
+## First-time setup only
+# Adds android/ios runner folders (this repo was hand-scaffolded, flutter
+# create was never run against it). Won't touch lib/ or pubspec.yaml, but
+# check `git status` after and revert anything unexpected.
+flutter create . --project-name elderly_companion --org com.se3080.group18 --platforms=android,ios
+
+# Install dependencies
+flutter pub get
+
+# Regenerate *.freezed.dart / *.g.dart (gitignored).
+# Run after every clone and after editing any file with an @freezed class.
+dart run build_runner build --delete-conflicting-outputs
+
+## Firebase setup
+# Wires the project to a real Firebase project, generates the (gitignored)
+# lib/core/config/firebase_options.dart. Requires:
+dart pub global activate flutterfire_cli
+# Not needed to run the app — main.dart swallows Firebase init failure so
+# the placeholder UI is still navigable — but needed for any feature that
+# actually talks to Firebase.
+flutterfire configure
+
+## Development
+flutter analyze          # must be clean before opening a PR
+flutter run
+
+## Testing
+flutter test                                  # full suite
+flutter test test/features/auth_trust/auth_repository_test.dart   # single file
