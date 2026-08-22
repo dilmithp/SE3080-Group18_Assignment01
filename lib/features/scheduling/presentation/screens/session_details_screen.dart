@@ -4,12 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:elderly_companion/core/routing/route_names.dart';
+import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
 import 'package:elderly_companion/core/widgets/app_status_icon.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
 import 'package:elderly_companion/core/widgets/loading_view.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session_status.dart';
 import 'package:elderly_companion/features/scheduling/presentation/providers/scheduling_providers.dart';
@@ -78,12 +81,33 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
     }
   }
 
+  /// The signed-in user's counterpart on this session — whichever of
+  /// requester/volunteer isn't them. `null` while auth state is still
+  /// loading or the user isn't signed in; the notes card below just stays
+  /// hidden in that case rather than guessing.
+  String? _otherPartyId(Session session, WidgetRef ref) {
+    final userId = ref.watch(authStateProvider).valueOrNull?.id;
+    if (userId == null) return null;
+    return userId == session.requesterId ? session.volunteerId : session.requesterId;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final session = widget.session;
     final formatted =
         DateFormat('EEEE, d MMMM · h:mm a').format(session.scheduledAt);
+    final otherPartyId = _otherPartyId(session, ref);
+    final communicationNotes = otherPartyId == null
+        ? null
+        : ref.watch(profileProvider(otherPartyId)).valueOrNull?.accessibilityPrefs
+            .communicationNotes;
+    // Drops the duration figure (secondary detail — location and time are
+    // what actually matter for showing up) and enlarges the header icon,
+    // matching the same simplified treatment as matching's screens.
+    final simplified = ref.watch(
+      accessibilityControllerProvider.select((s) => s.simplifiedMode),
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -98,7 +122,7 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
                   children: [
                     AppStatusIcon(
                       icon: Icons.event_note_outlined,
-                      size: 64,
+                      size: simplified ? 88 : 64,
                       background: theme.colorScheme.tertiaryContainer,
                       foreground: theme.colorScheme.onTertiaryContainer,
                     ),
@@ -128,11 +152,13 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _DetailRow(icon: Icons.place_outlined, label: session.location),
-                    const SizedBox(height: AppSpacing.sm),
-                    _DetailRow(
-                      icon: Icons.timer_outlined,
-                      label: '${session.durationMinutes} minutes',
-                    ),
+                    if (!simplified) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      _DetailRow(
+                        icon: Icons.timer_outlined,
+                        label: '${session.durationMinutes} minutes',
+                      ),
+                    ],
                     if (session.notes != null && session.notes!.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.sm),
                       _DetailRow(icon: Icons.notes_outlined, label: session.notes!),
@@ -140,6 +166,28 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
                   ],
                 ),
               ),
+              if (communicationNotes != null && communicationNotes.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.record_voice_over_outlined,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text('Communication notes', style: theme.textTheme.titleLarge),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(communicationNotes, style: theme.textTheme.bodyLarge),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
               ..._actionsFor(session.status),
               const SizedBox(height: AppSpacing.md),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:elderly_companion/core/routing/route_names.dart';
+import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/utils/validators.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
@@ -28,6 +29,12 @@ class MatchDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final candidate = this.candidate;
+    // Simplified mode drops the dense stat-tile row and the skills-chip
+    // list — secondary detail — and keeps the name, the plain-language
+    // "why this match" reasons, and the primary booking action.
+    final simplified = ref.watch(
+      accessibilityControllerProvider.select((s) => s.simplifiedMode),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Match details')),
@@ -80,36 +87,40 @@ class MatchDetailsScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _StatTile(
-                              label: 'Trust score',
-                              value: '${(candidate.trustScore.clamp(0.0, 1.0) * 100).round()}%',
-                              icon: Icons.verified_user_outlined,
+                      if (!simplified) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatTile(
+                                label: 'Trust score',
+                                value:
+                                    '${(candidate.trustScore.clamp(0.0, 1.0) * 100).round()}%',
+                                icon: Icons.verified_user_outlined,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: _StatTile(
-                              label: 'Match score',
-                              value: '${(candidate.matchScore.clamp(0.0, 1.0) * 100).round()}%',
-                              icon: Icons.diversity_3_outlined,
-                            ),
-                          ),
-                          if (candidate.distanceKm > 0) ...[
                             const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: _StatTile(
-                                label: 'Distance',
-                                value: '${candidate.distanceKm.toStringAsFixed(1)} km',
-                                icon: Icons.near_me_outlined,
+                                label: 'Match score',
+                                value:
+                                    '${(candidate.matchScore.clamp(0.0, 1.0) * 100).round()}%',
+                                icon: Icons.diversity_3_outlined,
                               ),
                             ),
+                            if (candidate.distanceKm > 0) ...[
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: _StatTile(
+                                  label: 'Distance',
+                                  value: '${candidate.distanceKm.toStringAsFixed(1)} km',
+                                  icon: Icons.near_me_outlined,
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
+                        ),
+                      ],
                       if (candidate.matchReasons.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.md),
                         AppCard(
@@ -140,6 +151,36 @@ class MatchDetailsScreen extends ConsumerWidget {
                           ),
                         ),
                       ],
+                      if (candidate.profile.accessibilityPrefs.communicationNotes
+                              ?.isNotEmpty ==
+                          true) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        AppCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.record_voice_over_outlined,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Text(
+                                    'Communication notes',
+                                    style: theme.textTheme.titleLarge,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                candidate.profile.accessibilityPrefs.communicationNotes!,
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       if (candidate.profile.bio.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.md),
                         AppCard(
@@ -153,7 +194,7 @@ class MatchDetailsScreen extends ConsumerWidget {
                           ),
                         ),
                       ],
-                      if (candidate.profile.skillsOffered.isNotEmpty) ...[
+                      if (!simplified && candidate.profile.skillsOffered.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.md),
                         AppCard(
                           child: Column(
@@ -324,6 +365,12 @@ class _BookingSheetState extends ConsumerState<_BookingSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Duration is a fiddly numeric field to type on a phone; simplified mode
+    // drops it and keeps the 60-minute default from _durationController's
+    // initial value instead of asking for it.
+    final simplified = ref.watch(
+      accessibilityControllerProvider.select((s) => s.simplifiedMode),
+    );
 
     return Padding(
       padding: EdgeInsets.only(
@@ -361,19 +408,21 @@ class _BookingSheetState extends ConsumerState<_BookingSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              label: 'Duration (minutes)',
-              controller: _durationController,
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                final minutes = int.tryParse(value ?? '');
-                if (minutes == null || minutes <= 0) {
-                  return 'Enter a duration in minutes.';
-                }
-                return null;
-              },
-            ),
+            if (!simplified) ...[
+              const SizedBox(height: AppSpacing.md),
+              AppTextField(
+                label: 'Duration (minutes)',
+                controller: _durationController,
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  final minutes = int.tryParse(value ?? '');
+                  if (minutes == null || minutes <= 0) {
+                    return 'Enter a duration in minutes.';
+                  }
+                  return null;
+                },
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             AppTextField(
               label: 'Location',

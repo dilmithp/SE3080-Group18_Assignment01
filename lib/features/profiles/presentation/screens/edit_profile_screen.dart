@@ -34,9 +34,11 @@ String _formatTimeOfDay(TimeOfDay time) =>
 
 /// Owner: Perera (features/profiles). Real form for creating/editing the
 /// signed-in user's profile, wired to [GetProfileUseCase]'s live stream and
-/// [UpdateProfileUseCase]. Accessibility preferences aren't editable here
-/// yet — they pass through unchanged (see AccessibilitySettingsScreen for
-/// the separate, on-device accessibility controls).
+/// [UpdateProfileUseCase]. Of `accessibilityPrefs`, only `communicationNotes`
+/// is editable here — `largeText`/`highContrast`/`simplifiedInterface` are
+/// device-display settings owned by AccessibilitySettingsScreen (which
+/// writes them through to the profile itself; see
+/// AccessibilityProfileSync), so they pass through unchanged from here.
 class EditProfileScreen extends ConsumerWidget {
   const EditProfileScreen({super.key});
 
@@ -98,6 +100,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
   late final TextEditingController _localityController;
   late final TextEditingController _skillsController;
   late final TextEditingController _helpController;
+  late final TextEditingController _communicationNotesController;
   late List<AvailabilityWindow> _availabilityWindows;
 
   String? _photoUrl;
@@ -131,6 +134,8 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     _localityController = TextEditingController(text: base.locality);
     _skillsController = TextEditingController(text: base.skillsOffered.join(', '));
     _helpController = TextEditingController(text: base.helpNeeded.join(', '));
+    _communicationNotesController =
+        TextEditingController(text: base.accessibilityPrefs.communicationNotes ?? '');
     _availabilityWindows = List.of(base.availabilityWindows);
     _photoUrl = base.photoUrl;
   }
@@ -142,6 +147,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     _localityController.dispose();
     _skillsController.dispose();
     _helpController.dispose();
+    _communicationNotesController.dispose();
     super.dispose();
   }
 
@@ -293,6 +299,18 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
         skillsOffered: _parseTags(_skillsController.text),
         helpNeeded: _parseTags(_helpController.text),
         availabilityWindows: _availabilityWindows,
+        // Not `_base.accessibilityPrefs.copyWith(communicationNotes: ...)` —
+        // that class's copyWith does `x ?? this.x`, so passing null to
+        // clear a note would silently keep the old one. Rebuilding the
+        // value directly sidesteps that.
+        accessibilityPrefs: AccessibilityPreferences(
+          largeText: _base.accessibilityPrefs.largeText,
+          highContrast: _base.accessibilityPrefs.highContrast,
+          simplifiedInterface: _base.accessibilityPrefs.simplifiedInterface,
+          communicationNotes: _communicationNotesController.text.trim().isEmpty
+              ? null
+              : _communicationNotesController.text.trim(),
+        ),
         photoUrl: _photoUrl,
       );
       final useCase = ref.read(updateProfileUseCaseProvider);
@@ -381,6 +399,15 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
                     hint: 'e.g. grocery runs, company on walks',
                     helperText: 'Separate with commas',
                     controller: _helpController,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    label: 'Communication notes (optional)',
+                    hint: 'e.g. speaks slowly, prefers texting, hard of '
+                        'hearing on the left',
+                    helperText: 'Shown to a matched volunteer before a session',
+                    controller: _communicationNotesController,
+                    maxLines: 3,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text('Availability', style: Theme.of(context).textTheme.titleLarge),

@@ -1,8 +1,42 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
+import 'package:elderly_companion/core/theme/accessibility/accessibility_state.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/profiles/domain/entities/accessibility_preferences.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
+
+/// Persisted → local direction of the field mapping (see class doc below
+/// for why these two shapes don't line up 1:1). Pure and dependency-free
+/// so it's unit-testable without mocking Riverpod or Firebase — see
+/// test/features/profiles/accessibility_mapping_test.dart.
+({bool highContrast, bool simplifiedMode, double textScale})
+    mapPreferencesToAccessibilityState(AccessibilityPreferences prefs) {
+  return (
+    highContrast: prefs.highContrast,
+    simplifiedMode: prefs.simplifiedInterface,
+    // largeText is a bool; textScale is continuous. 1.3 is the same
+    // "Large" preset AccessibilitySettingsScreen's quick-picker offers, so
+    // seeding from a profile lands on a value the user could have chosen
+    // themselves rather than an arbitrary number.
+    textScale: prefs.largeText ? 1.3 : 1.0,
+  );
+}
+
+/// Local → persisted direction, used by AccessibilitySettingsScreen's
+/// write-through. [existing] supplies `communicationNotes`, which has no
+/// local counterpart and must pass through unchanged.
+AccessibilityPreferences mapAccessibilityStateToPreferences(
+  AccessibilityState state,
+  AccessibilityPreferences existing,
+) {
+  return AccessibilityPreferences(
+    largeText: state.textScale > 1.0,
+    highContrast: state.highContrast,
+    simplifiedInterface: state.simplifiedMode,
+    communicationNotes: existing.communicationNotes,
+  );
+}
 
 /// One-way sync from the signed-in user's persisted
 /// `UserProfile.accessibilityPrefs` into the on-device
@@ -36,11 +70,11 @@ class AccessibilityProfileSync extends Notifier<void> {
       if (profile == null) return;
 
       _seededForUserId = userId;
-      final prefs = profile.accessibilityPrefs;
+      final mapped = mapPreferencesToAccessibilityState(profile.accessibilityPrefs);
       ref.read(accessibilityControllerProvider.notifier).seedFrom(
-            highContrast: prefs.highContrast,
-            simplifiedMode: prefs.simplifiedInterface,
-            textScale: prefs.largeText ? 1.3 : 1.0,
+            highContrast: mapped.highContrast,
+            simplifiedMode: mapped.simplifiedMode,
+            textScale: mapped.textScale,
           );
     });
   }
