@@ -250,6 +250,44 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
                   ),
                 ),
               ],
+              if (session.seriesId != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                AppCard(
+                  onTap: () => context.push(
+                    RouteNames.sessionSeriesPath(session.seriesId!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.repeat, color: theme.colorScheme.primary),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Part of a repeating series',
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            if (!simplified) ...[
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                'See every session in this series',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
               ..._actionsFor(session, currentUserId),
               const SizedBox(height: AppSpacing.md),

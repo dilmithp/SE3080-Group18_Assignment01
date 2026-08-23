@@ -19,6 +19,7 @@ import 'package:elderly_companion/features/profiles/presentation/screens/profile
 import 'package:elderly_companion/features/scheduling/presentation/screens/scheduling_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_details_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_feedback_screen.dart';
+import 'package:elderly_companion/features/scheduling/presentation/screens/session_series_screen.dart';
 
 /// Bridges a Riverpod-watched value into a [Listenable] so [GoRouter] can
 /// react to auth-state changes without rebuilding the whole router.
@@ -136,6 +137,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'sessionFeedback',
         builder: (context, state) => SessionFeedbackScreen(
           sessionId: state.pathParameters['sessionId']!,
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.sessionSeries,
+        name: 'sessionSeries',
+        builder: (context, state) => SessionSeriesScreen(
+          seriesId: state.pathParameters['seriesId']!,
         ),
       ),
     ],

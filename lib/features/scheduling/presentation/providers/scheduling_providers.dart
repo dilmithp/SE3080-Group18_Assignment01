@@ -8,8 +8,10 @@ import 'package:elderly_companion/features/scheduling/domain/entities/session.da
 import 'package:elderly_companion/features/scheduling/domain/entities/session_feedback.dart';
 import 'package:elderly_companion/features/scheduling/domain/repositories/feedback_repository.dart';
 import 'package:elderly_companion/features/scheduling/domain/repositories/session_repository.dart';
+import 'package:elderly_companion/features/scheduling/domain/services/session_series.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/book_recurring_session_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/book_session_usecase.dart';
+import 'package:elderly_companion/features/scheduling/domain/usecases/cancel_series_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/confirm_session_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/submit_feedback_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/update_session_status_usecase.dart';
@@ -45,6 +47,10 @@ final bookRecurringSessionUseCaseProvider =
   return BookRecurringSessionUseCase(ref.watch(sessionRepositoryProvider));
 });
 
+final cancelSeriesUseCaseProvider = Provider<CancelSeriesUseCase>((ref) {
+  return CancelSeriesUseCase(ref.watch(sessionRepositoryProvider));
+});
+
 final confirmSessionUseCaseProvider = Provider<ConfirmSessionUseCase>((ref) {
   return ConfirmSessionUseCase(ref.watch(sessionRepositoryProvider));
 });
@@ -61,6 +67,20 @@ final submitFeedbackUseCaseProvider = Provider<SubmitFeedbackUseCase>((ref) {
 final sessionsForUserProvider =
     StreamProvider.family<List<Session>, String>((ref, userId) {
   return ref.watch(sessionRepositoryProvider).watchSessionsForUser(userId);
+});
+
+/// Every occurrence of one recurring series, earliest first.
+///
+/// Derived from [sessionsForUserProvider] rather than querying Firestore
+/// again: that stream already carries every session the user is on, so a
+/// series is a filter over data in hand — no second read, and no composite
+/// index for a `seriesId` query that nobody has created.
+final sessionSeriesProvider = Provider.family<AsyncValue<List<Session>>,
+    ({String userId, String seriesId})>((ref, args) {
+  return ref.watch(sessionsForUserProvider(args.userId)).whenData(
+        (sessions) => const SessionSeries()
+            .occurrencesOf(seriesId: args.seriesId, sessions: sessions),
+      );
 });
 
 /// Feedback already recorded against a session. Folds the [Failure] into an

@@ -28,10 +28,17 @@ class RouteNames {
   static const String sessionDetails = '/scheduling/:sessionId';
   static const String sessionFeedback = '/scheduling/:sessionId/feedback';
 
+  /// One recurring series. Three segments, so it cannot collide with the
+  /// two-segment [sessionDetails] pattern above.
+  static const String sessionSeries = '/scheduling/series/:seriesId';
+
   static String matchDetailsPath(String candidateId) => '/matching/$candidateId';
 
   static String sessionDetailsPath(String sessionId) => '/scheduling/$sessionId';
 
   static String sessionFeedbackPath(String sessionId) =>
       '/scheduling/$sessionId/feedback';
+
+  static String sessionSeriesPath(String seriesId) =>
+      '/scheduling/series/$seriesId';
 }
