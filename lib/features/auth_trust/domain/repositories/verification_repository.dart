@@ -16,6 +16,10 @@ abstract class VerificationRepository {
 
   Stream<VerificationRequest?> watchVerificationStatus(String userId);
 
+  /// Admin-only: live queue of every request still awaiting review, across
+  /// all users, for [AdminVerificationQueueScreen].
+  Stream<List<VerificationRequest>> watchPendingVerificationRequests();
+
   /// Admin-only: approves or rejects a pending request.
   Future<Either<Failure, VerificationRequest>> reviewVerificationRequest({
     required String requestId,

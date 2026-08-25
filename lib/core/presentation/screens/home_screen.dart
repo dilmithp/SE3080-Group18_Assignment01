@@ -7,7 +7,9 @@ import 'package:elderly_companion/core/theme/accessibility/accessibility_control
 import 'package:elderly_companion/core/theme/accessibility/accessibility_state.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
+import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/notifications/presentation/widgets/notification_bell.dart';
 
 /// Post-login dashboard. Shell screen owned by no single feature — it just
 /// links out to each feature's placeholder screen and exposes the
@@ -21,6 +23,7 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Elderly Companion'),
         actions: [
+          const NotificationBell(),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
@@ -133,6 +136,40 @@ class _NavTiles extends StatelessWidget {
           subtitle: 'Trust and safety status',
           tone: _Tone.secondary,
           onTap: () => context.push(RouteNames.verification),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _NavTile(
+          icon: Icons.chat_bubble_outline,
+          title: 'Messages',
+          subtitle: 'Chat with your matches',
+          tone: _Tone.secondary,
+          onTap: () => context.push(RouteNames.conversations),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _NavTile(
+          icon: Icons.forum_outlined,
+          title: 'Community',
+          subtitle: 'Thank-yous, updates and requests',
+          tone: _Tone.tertiary,
+          onTap: () => context.push(RouteNames.community),
+        ),
+        Consumer(
+          builder: (context, ref, _) {
+            final role = ref.watch(authStateProvider).valueOrNull?.role;
+            if (role != UserRole.admin) return const SizedBox.shrink();
+            return Column(
+              children: [
+                const SizedBox(height: AppSpacing.sm),
+                _NavTile(
+                  icon: Icons.fact_check_outlined,
+                  title: 'Verification queue',
+                  subtitle: 'Review pending identity documents',
+                  tone: _Tone.primary,
+                  onTap: () => context.push(RouteNames.adminVerificationQueue),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );

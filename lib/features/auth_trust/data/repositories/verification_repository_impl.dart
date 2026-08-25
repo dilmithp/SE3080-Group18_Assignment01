@@ -45,6 +45,13 @@ class VerificationRepositoryImpl implements VerificationRepository {
   }
 
   @override
+  Stream<List<VerificationRequest>> watchPendingVerificationRequests() {
+    return _dataSource
+        .watchPendingVerificationRequests()
+        .map((dtos) => dtos.map((dto) => dto.toEntity()).toList());
+  }
+
+  @override
   Future<Either<Failure, VerificationRequest>> reviewVerificationRequest({
     required String requestId,
     required String reviewerId,

@@ -37,6 +37,10 @@ abstract class AuthTrustRemoteDataSource {
 
   Stream<VerificationRequestDto?> watchVerificationStatus(String userId);
 
+  /// Admin-only: every request currently `status == 'pending'`, across all
+  /// users.
+  Stream<List<VerificationRequestDto>> watchPendingVerificationRequests();
+
   Future<VerificationRequestDto> reviewVerificationRequest({
     required String requestId,
     required String reviewerId,
@@ -226,6 +230,19 @@ class FirebaseAuthTrustRemoteDataSource implements AuthTrustRemoteDataSource {
       final doc = snapshot.docs.first;
       return _verificationRequestDtoFromData(doc.id, doc.data());
     });
+  }
+
+  @override
+  Stream<List<VerificationRequestDto>> watchPendingVerificationRequests() {
+    return _firestoreService
+        .collection(AppConfig.verificationRequestsCollection)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => _verificationRequestDtoFromData(doc.id, doc.data()))
+              .toList(),
+        );
   }
 
   @override

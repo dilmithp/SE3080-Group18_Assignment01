@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:elderly_companion/core/di/injection.dart';
+import 'package:elderly_companion/features/notifications/presentation/providers/notifications_providers.dart';
 import 'package:elderly_companion/features/scheduling/data/datasources/scheduling_remote_data_source.dart';
 import 'package:elderly_companion/features/scheduling/data/repositories/feedback_repository_impl.dart';
 import 'package:elderly_companion/features/scheduling/data/repositories/session_repository_impl.dart';
@@ -28,11 +29,17 @@ final schedulingRemoteDataSourceProvider = Provider<SchedulingRemoteDataSource>(
 });
 
 final sessionRepositoryProvider = Provider<SessionRepository>((ref) {
-  return SessionRepositoryImpl(ref.watch(schedulingRemoteDataSourceProvider));
+  return SessionRepositoryImpl(
+    ref.watch(schedulingRemoteDataSourceProvider),
+    ref.watch(notificationsRepositoryProvider),
+  );
 });
 
 final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
-  return FeedbackRepositoryImpl(ref.watch(schedulingRemoteDataSourceProvider));
+  return FeedbackRepositoryImpl(
+    ref.watch(schedulingRemoteDataSourceProvider),
+    ref.watch(notificationsRepositoryProvider),
+  );
 });
 
 final bookSessionUseCaseProvider = Provider<BookSessionUseCase>((ref) {

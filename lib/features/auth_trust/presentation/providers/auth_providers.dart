@@ -12,6 +12,7 @@ import 'package:elderly_companion/features/auth_trust/domain/repositories/auth_r
 import 'package:elderly_companion/features/auth_trust/domain/repositories/trust_score_repository.dart';
 import 'package:elderly_companion/features/auth_trust/domain/repositories/verification_repository.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/get_trust_score_usecase.dart';
+import 'package:elderly_companion/features/auth_trust/domain/usecases/review_verification_request_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/sign_in_with_email_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/sign_up_with_email_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/submit_verification_request_usecase.dart';
@@ -59,6 +60,11 @@ final submitVerificationRequestUseCaseProvider =
   return SubmitVerificationRequestUseCase(ref.watch(verificationRepositoryProvider));
 });
 
+final reviewVerificationRequestUseCaseProvider =
+    Provider<ReviewVerificationRequestUseCase>((ref) {
+  return ReviewVerificationRequestUseCase(ref.watch(verificationRepositoryProvider));
+});
+
 final getTrustScoreUseCaseProvider = Provider<GetTrustScoreUseCase>((ref) {
   return GetTrustScoreUseCase(ref.watch(trustScoreRepositoryProvider));
 });
@@ -68,4 +74,11 @@ final getTrustScoreUseCaseProvider = Provider<GetTrustScoreUseCase>((ref) {
 final verificationStatusProvider =
     StreamProvider.family<VerificationRequest?, String>((ref, userId) {
   return ref.watch(verificationRepositoryProvider).watchVerificationStatus(userId);
+});
+
+/// Admin-only live queue of every verification request still awaiting
+/// review, for [AdminVerificationQueueScreen].
+final pendingVerificationRequestsProvider =
+    StreamProvider<List<VerificationRequest>>((ref) {
+  return ref.watch(verificationRepositoryProvider).watchPendingVerificationRequests();
 });

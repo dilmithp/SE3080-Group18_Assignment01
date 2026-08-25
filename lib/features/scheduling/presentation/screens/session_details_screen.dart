@@ -12,6 +12,7 @@ import 'package:elderly_companion/core/widgets/app_status_icon.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
 import 'package:elderly_companion/core/widgets/loading_view.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session_feedback.dart';
@@ -134,6 +135,27 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
     return userId == session.requesterId ? session.volunteerId : session.requesterId;
   }
 
+  /// Gets (or, on first contact, creates) the 1:1 conversation with the
+  /// other participant on this session and opens it. `/chat/:conversationId`
+  /// is registered by a later integration pass — see messaging's report for
+  /// the exact `GoRoute` shape.
+  Future<void> _openConversation(String currentUserId, String otherPartyId) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final useCase = ref.read(getOrCreateConversationUseCaseProvider);
+    final result = await useCase(
+      userId: currentUserId,
+      otherUserId: otherPartyId,
+    );
+    if (!mounted) return;
+    result.fold(
+      (failure) => messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(failure.message))),
+      (conversation) =>
+          context.push('/chat/${conversation.id}', extra: otherPartyId),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -144,10 +166,9 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
     // signed-in id is resolved once here and handed to both users of it.
     final currentUserId = ref.watch(authStateProvider).valueOrNull?.id;
     final otherPartyId = _otherPartyId(session, currentUserId);
-    final communicationNotes = otherPartyId == null
-        ? null
-        : ref.watch(profileProvider(otherPartyId)).valueOrNull?.accessibilityPrefs
-            .communicationNotes;
+    final otherProfile =
+        otherPartyId == null ? null : ref.watch(profileProvider(otherPartyId)).valueOrNull;
+    final communicationNotes = otherProfile?.accessibilityPrefs.communicationNotes;
     // Drops the duration figure (secondary detail — location and time are
     // what actually matter for showing up) and enlarges the header icon,
     // matching the same simplified treatment as matching's screens.
@@ -290,6 +311,17 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
               ],
               const SizedBox(height: AppSpacing.lg),
               ..._actionsFor(session, currentUserId),
+              if (currentUserId != null && otherPartyId != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                AppButton(
+                  label: otherProfile?.displayName.isNotEmpty == true
+                      ? 'Message ${otherProfile!.displayName}'
+                      : 'Message',
+                  icon: Icons.chat_bubble_outline,
+                  secondary: true,
+                  onPressed: () => _openConversation(currentUserId, otherPartyId),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               if (canLeaveFeedback)
                 AppButton(
