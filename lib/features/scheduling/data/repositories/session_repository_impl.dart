@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:elderly_companion/core/error/exceptions.dart';
 import 'package:elderly_companion/core/error/failures.dart';
 import 'package:elderly_companion/features/scheduling/data/datasources/scheduling_remote_data_source.dart';
+import 'package:elderly_companion/features/scheduling/data/exceptions/scheduling_exceptions.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session_status.dart';
 import 'package:elderly_companion/features/scheduling/domain/repositories/session_repository.dart';
@@ -23,6 +24,9 @@ class SessionRepositoryImpl implements SessionRepository {
     required int durationMinutes,
     required String location,
     String? notes,
+    bool isRecurring = false,
+    String? recurrenceRule,
+    String? seriesId,
   }) async {
     try {
       final dto = await _dataSource.bookSession(
@@ -32,6 +36,9 @@ class SessionRepositoryImpl implements SessionRepository {
         durationMinutes: durationMinutes,
         location: location,
         notes: notes,
+        isRecurring: isRecurring,
+        recurrenceRule: recurrenceRule,
+        seriesId: seriesId,
       );
       return Right(dto.toEntity());
     } on NotFoundException catch (e) {
@@ -56,6 +63,37 @@ class SessionRepositoryImpl implements SessionRepository {
         status: status,
       );
       return Right(dto.toEntity());
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(UnknownFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, Session>> confirmSession({
+    required String sessionId,
+    required String confirmingUserId,
+  }) async {
+    try {
+      final dto = await _dataSource.confirmSession(
+        sessionId: sessionId,
+        confirmingUserId: confirmingUserId,
+      );
+      return Right(dto.toEntity());
+    } on SessionConflictException catch (e) {
+      // TODO(ranketh): a dedicated ConflictFailure belongs in
+      // core/error/failures.dart so callers can branch on the type instead
+      // of reading the message — Failure is sealed, so it cannot be
+      // subclassed from this feature. Needs the two-reviewer process for
+      // core changes.
+      return Left(UnknownFailure(e.message));
+    } on InvalidSessionTransitionException catch (e) {
+      return Left(UnknownFailure(e.message));
     } on NotFoundException catch (e) {
       return Left(NotFoundFailure(e.message));
     } on NetworkException catch (e) {

@@ -11,6 +11,12 @@ import 'package:elderly_companion/features/scheduling/domain/entities/session_st
 ///
 /// Owner: Ranketh (features/scheduling).
 abstract class SessionRepository {
+  /// Books a single `requested` session.
+  ///
+  /// [isRecurring], [recurrenceRule] and [seriesId] describe the series this
+  /// session belongs to; [BookRecurringSessionUseCase] passes the same
+  /// [seriesId] for every occurrence it books. A one-off booking omits all
+  /// three.
   Future<Either<Failure, Session>> bookSession({
     required String requesterId,
     required String volunteerId,
@@ -18,11 +24,26 @@ abstract class SessionRepository {
     required int durationMinutes,
     required String location,
     String? notes,
+    bool isRecurring = false,
+    String? recurrenceRule,
+    String? seriesId,
   });
 
   Future<Either<Failure, Session>> updateSessionStatus({
     required String sessionId,
     required SessionStatus status,
+  });
+
+  /// Accepts [sessionId] on behalf of [confirmingUserId] — the
+  /// `requested -> confirmed` edge, which unlike a plain status write
+  /// re-checks the slot at accept time so two overlapping requests cannot
+  /// both be confirmed.
+  ///
+  /// Returns a [Failure] carrying a conflict message when the slot was
+  /// taken in the meantime.
+  Future<Either<Failure, Session>> confirmSession({
+    required String sessionId,
+    required String confirmingUserId,
   });
 
   Future<Either<Failure, Session>> getSession(String sessionId);
