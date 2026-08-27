@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
@@ -8,11 +9,19 @@ import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/core/widgets/empty_view.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
 import 'package:elderly_companion/core/widgets/loading_view.dart';
+import 'package:elderly_companion/features/auth_trust/domain/entities/app_user.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/scheduling/domain/entities/session.dart';
+import 'package:elderly_companion/features/scheduling/domain/entities/session_feedback.dart';
+import 'package:elderly_companion/features/scheduling/domain/services/feedback_eligibility.dart';
 import 'package:elderly_companion/features/scheduling/presentation/providers/scheduling_providers.dart';
 
 /// Owner: Ranketh (features/scheduling). Lets the signed-in user rate and
 /// comment on a completed session.
+///
+/// The route is reachable directly, so eligibility is checked here as well
+/// as on the details screen that links to it — same [FeedbackEligibility]
+/// rule, so the two cannot disagree.
 class SessionFeedbackScreen extends ConsumerStatefulWidget {
   const SessionFeedbackScreen({required this.sessionId, super.key});
 
@@ -58,16 +67,23 @@ class _SessionFeedbackScreenState extends ConsumerState<SessionFeedbackScreen> {
       );
       result.fold(
         (failure) => _showMessage(failure.message),
-        (feedback) => _showMessage('Feedback submitted.'),
+        (_) {
+          // Feedback cannot be edited once written (firestore.rules denies
+          // updates), so there is nothing left to do on this screen —
+          // re-read the list behind us and hand the user back to the
+          // session they just rated.
+          ref.invalidate(sessionFeedbackProvider(widget.sessionId));
+          _showMessage('Thank you — your feedback has been recorded.');
+          if (mounted && context.canPop()) context.pop();
+        },
       );
-    } on UnimplementedError catch (e) {
-      _showMessage(e.message ?? 'Not implemented yet.');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
   void _showMessage(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
@@ -76,33 +92,95 @@ class _SessionFeedbackScreenState extends ConsumerState<SessionFeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
+    final sessionAsync = ref.watch(sessionProvider(widget.sessionId));
+    final feedbackAsync = ref.watch(sessionFeedbackProvider(widget.sessionId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Leave feedback')),
-      body: authState.when(
-        loading: () => const LoadingView(),
-        error: (error, _) => ErrorView(message: error.toString()),
-        data: (user) {
-          if (user == null) {
-            return const EmptyView(
-              icon: Icons.lock_outline,
-              title: 'Sign in first',
-              message: 'You need to be signed in before you can leave '
-                  'feedback.',
-            );
-          }
-          return _FeedbackForm(
-            formKey: _formKey,
-            rating: _rating,
-            onRatingChanged: (rating) => setState(
-              () => _ratingController.text = '$rating',
-            ),
-            commentController: _commentController,
-            isSubmitting: _isSubmitting,
-            onSubmit: () => _submit(user.id),
-          );
-        },
+      body: _body(authState, sessionAsync, feedbackAsync),
+    );
+  }
+
+  Widget _body(
+    AsyncValue<AppUser?> authState,
+    AsyncValue<Session> sessionAsync,
+    AsyncValue<List<SessionFeedback>> feedbackAsync,
+  ) {
+    if (authState.isLoading || sessionAsync.isLoading || feedbackAsync.isLoading) {
+      return const LoadingView();
+    }
+
+    final error = authState.error ?? sessionAsync.error ?? feedbackAsync.error;
+    if (error != null) return ErrorView(message: error.toString());
+
+    final user = authState.valueOrNull;
+    if (user == null) {
+      return const EmptyView(
+        icon: Icons.lock_outline,
+        title: 'Sign in first',
+        message: 'You need to be signed in before you can leave feedback.',
+      );
+    }
+
+    final session = sessionAsync.requireValue;
+    final feedback = feedbackAsync.requireValue;
+    const eligibility = FeedbackEligibility();
+
+    if (!eligibility.canLeaveFeedback(
+      session: session,
+      userId: user.id,
+      existingFeedback: feedback,
+    )) {
+      return _ineligibleView(
+        session: session,
+        userId: user.id,
+        feedback: feedback,
+        eligibility: eligibility,
+      );
+    }
+
+    return _FeedbackForm(
+      formKey: _formKey,
+      rating: _rating,
+      onRatingChanged: (rating) => setState(
+        () => _ratingController.text = '$rating',
       ),
+      commentController: _commentController,
+      isSubmitting: _isSubmitting,
+      onSubmit: () => _submit(user.id),
+    );
+  }
+
+  /// Says *which* reason the form is unavailable rather than a single
+  /// catch-all message — "you already rated this" and "this session has not
+  /// happened yet" call for very different next steps.
+  Widget _ineligibleView({
+    required Session session,
+    required String userId,
+    required List<SessionFeedback> feedback,
+    required FeedbackEligibility eligibility,
+  }) {
+    if (!eligibility.isParticipant(session: session, userId: userId)) {
+      return const EmptyView(
+        icon: Icons.person_off_outlined,
+        title: 'Not your session',
+        message: 'Only the two people who arranged a session can leave '
+            'feedback on it.',
+      );
+    }
+    if (eligibility.hasRated(userId: userId, existingFeedback: feedback)) {
+      return const EmptyView(
+        icon: Icons.check_circle_outline,
+        title: 'Feedback already sent',
+        message: 'You have already rated this session. Feedback cannot be '
+            'changed once it is sent.',
+      );
+    }
+    return const EmptyView(
+      icon: Icons.schedule_outlined,
+      title: 'Not finished yet',
+      message: 'You can leave feedback once the session has been marked '
+          'completed.',
     );
   }
 }

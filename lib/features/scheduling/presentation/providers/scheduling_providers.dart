@@ -5,9 +5,12 @@ import 'package:elderly_companion/features/scheduling/data/datasources/schedulin
 import 'package:elderly_companion/features/scheduling/data/repositories/feedback_repository_impl.dart';
 import 'package:elderly_companion/features/scheduling/data/repositories/session_repository_impl.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session.dart';
+import 'package:elderly_companion/features/scheduling/domain/entities/session_feedback.dart';
 import 'package:elderly_companion/features/scheduling/domain/repositories/feedback_repository.dart';
 import 'package:elderly_companion/features/scheduling/domain/repositories/session_repository.dart';
+import 'package:elderly_companion/features/scheduling/domain/usecases/book_recurring_session_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/book_session_usecase.dart';
+import 'package:elderly_companion/features/scheduling/domain/usecases/confirm_session_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/submit_feedback_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/update_session_status_usecase.dart';
 
@@ -34,6 +37,18 @@ final bookSessionUseCaseProvider = Provider<BookSessionUseCase>((ref) {
   return BookSessionUseCase(ref.watch(sessionRepositoryProvider));
 });
 
+/// Not reachable from any screen yet — the recurring-booking UI is a
+/// separate piece of work; this is here so the wiring is in one place when
+/// it lands.
+final bookRecurringSessionUseCaseProvider =
+    Provider<BookRecurringSessionUseCase>((ref) {
+  return BookRecurringSessionUseCase(ref.watch(sessionRepositoryProvider));
+});
+
+final confirmSessionUseCaseProvider = Provider<ConfirmSessionUseCase>((ref) {
+  return ConfirmSessionUseCase(ref.watch(sessionRepositoryProvider));
+});
+
 final updateSessionStatusUseCaseProvider = Provider<UpdateSessionStatusUseCase>((ref) {
   return UpdateSessionStatusUseCase(ref.watch(sessionRepositoryProvider));
 });
@@ -46,6 +61,16 @@ final submitFeedbackUseCaseProvider = Provider<SubmitFeedbackUseCase>((ref) {
 final sessionsForUserProvider =
     StreamProvider.family<List<Session>, String>((ref, userId) {
   return ref.watch(sessionRepositoryProvider).watchSessionsForUser(userId);
+});
+
+/// Feedback already recorded against a session. Folds the [Failure] into an
+/// error the same way [sessionProvider] does, so a read failure surfaces
+/// through [AsyncValue.error] rather than as a silently empty list.
+final sessionFeedbackProvider =
+    FutureProvider.family<List<SessionFeedback>, String>((ref, sessionId) async {
+  final result =
+      await ref.watch(feedbackRepositoryProvider).getFeedbackForSession(sessionId);
+  return result.fold((failure) => throw failure, (feedback) => feedback);
 });
 
 /// A single session by id. Throws the [Failure] on a miss so it surfaces
