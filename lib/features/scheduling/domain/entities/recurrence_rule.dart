@@ -11,21 +11,29 @@ enum RecurrenceFrequency {
 
 /// A day of the week, as a two-letter rule-string code.
 enum RecurrenceDay {
-  monday('MO', DateTime.monday),
-  tuesday('TU', DateTime.tuesday),
-  wednesday('WE', DateTime.wednesday),
-  thursday('TH', DateTime.thursday),
-  friday('FR', DateTime.friday),
-  saturday('SA', DateTime.saturday),
-  sunday('SU', DateTime.sunday);
+  monday('MO', DateTime.monday, 'Monday'),
+  tuesday('TU', DateTime.tuesday, 'Tuesday'),
+  wednesday('WE', DateTime.wednesday, 'Wednesday'),
+  thursday('TH', DateTime.thursday, 'Thursday'),
+  friday('FR', DateTime.friday, 'Friday'),
+  saturday('SA', DateTime.saturday, 'Saturday'),
+  sunday('SU', DateTime.sunday, 'Sunday');
 
-  const RecurrenceDay(this.code, this.weekday);
+  const RecurrenceDay(this.code, this.weekday, this.label);
 
   /// The token used in a rule string, e.g. `MO`.
   final String code;
 
   /// The matching `DateTime.weekday` value, so callers never hand-map these.
   final int weekday;
+
+  /// Human-readable day name, for the same reason [SessionStatus] carries
+  /// its own label: the display string belongs with the value, not copied
+  /// into every widget that renders it.
+  final String label;
+
+  /// The first three letters, for a chip or other tight space.
+  String get shortLabel => label.substring(0, 3);
 
   static RecurrenceDay? fromCode(String code) {
     for (final day in RecurrenceDay.values) {
