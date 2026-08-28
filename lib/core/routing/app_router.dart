@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:elderly_companion/core/presentation/screens/home_screen.dart';
 import 'package:elderly_companion/core/presentation/screens/splash_screen.dart';
 import 'package:elderly_companion/core/routing/route_names.dart';
+import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
+import 'package:elderly_companion/core/theme/app_motion.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/app_user.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/screens/admin_verification_queue_screen.dart';
@@ -62,6 +65,44 @@ String? _redirect(Ref ref, GoRouterState state) {
   return null;
 }
 
+/// One transition for every route — a soft fade with a short upward drift,
+/// the same [AppMotion] vocabulary used everywhere else in the app, so
+/// navigating never feels like a different app took over mid-tap.
+///
+/// Falls back to an instant cut (no animation at all) when the OS-level
+/// reduce-motion setting or this app's own Simplified Mode is on — read via
+/// the [ProviderScope] container directly since a route's `pageBuilder`
+/// isn't a [ConsumerWidget].
+Page<void> _appPage(BuildContext context, GoRouterState state, Widget child) {
+  final container = ProviderScope.containerOf(context, listen: false);
+  final simplified =
+      container.read(accessibilityControllerProvider).simplifiedMode;
+  final reduceMotion = simplified || MediaQuery.of(context).disableAnimations;
+
+  if (reduceMotion) {
+    return NoTransitionPage(key: state.pageKey, child: child);
+  }
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: AppMotion.standard,
+    reverseTransitionDuration: AppMotion.exitStandard,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(parent: animation, curve: AppMotion.enter);
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.03),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 final goRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = _RouterRefreshNotifier(ref);
   ref.onDispose(refreshNotifier.dispose);
@@ -75,109 +116,137 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.splash,
         name: 'splash',
-        builder: (context, state) => const SplashScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const SplashScreen()),
       ),
       GoRoute(
         path: RouteNames.login,
         name: 'login',
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const LoginScreen()),
       ),
       GoRoute(
         path: RouteNames.signup,
         name: 'signup',
-        builder: (context, state) => const SignupScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const SignupScreen()),
       ),
       GoRoute(
         path: RouteNames.home,
         name: 'home',
-        builder: (context, state) => const HomeScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const HomeScreen()),
       ),
       GoRoute(
         path: RouteNames.verification,
         name: 'verification',
-        builder: (context, state) => const VerificationScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const VerificationScreen()),
       ),
       GoRoute(
         path: RouteNames.profile,
         name: 'profile',
-        builder: (context, state) => const ProfileScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const ProfileScreen()),
       ),
       GoRoute(
         path: RouteNames.editProfile,
         name: 'editProfile',
-        builder: (context, state) => const EditProfileScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const EditProfileScreen()),
       ),
       GoRoute(
         path: RouteNames.accessibilitySettings,
         name: 'accessibilitySettings',
-        builder: (context, state) => const AccessibilitySettingsScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const AccessibilitySettingsScreen()),
       ),
       GoRoute(
         path: RouteNames.matching,
         name: 'matching',
-        builder: (context, state) => const MatchingScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const MatchingScreen()),
       ),
       GoRoute(
         path: RouteNames.matchDetails,
         name: 'matchDetails',
-        builder: (context, state) => MatchDetailsScreen(
-          candidateId: state.pathParameters['candidateId']!,
-          candidate: state.extra as MatchCandidate?,
+        pageBuilder: (context, state) => _appPage(
+          context,
+          state,
+          MatchDetailsScreen(
+            candidateId: state.pathParameters['candidateId']!,
+            candidate: state.extra as MatchCandidate?,
+          ),
         ),
       ),
       GoRoute(
         path: RouteNames.scheduling,
         name: 'scheduling',
-        builder: (context, state) => const SchedulingScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const SchedulingScreen()),
       ),
       GoRoute(
         path: RouteNames.sessionDetails,
         name: 'sessionDetails',
-        builder: (context, state) => SessionDetailsScreen(
-          sessionId: state.pathParameters['sessionId']!,
+        pageBuilder: (context, state) => _appPage(
+          context,
+          state,
+          SessionDetailsScreen(sessionId: state.pathParameters['sessionId']!),
         ),
       ),
       GoRoute(
         path: RouteNames.sessionFeedback,
         name: 'sessionFeedback',
-        builder: (context, state) => SessionFeedbackScreen(
-          sessionId: state.pathParameters['sessionId']!,
+        pageBuilder: (context, state) => _appPage(
+          context,
+          state,
+          SessionFeedbackScreen(sessionId: state.pathParameters['sessionId']!),
         ),
       ),
       GoRoute(
         path: RouteNames.sessionSeries,
         name: 'sessionSeries',
-        builder: (context, state) => SessionSeriesScreen(
-          seriesId: state.pathParameters['seriesId']!,
+        pageBuilder: (context, state) => _appPage(
+          context,
+          state,
+          SessionSeriesScreen(seriesId: state.pathParameters['seriesId']!),
         ),
       ),
       GoRoute(
         path: RouteNames.adminVerificationQueue,
         name: 'adminVerificationQueue',
-        builder: (context, state) => const AdminVerificationQueueScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const AdminVerificationQueueScreen()),
       ),
       GoRoute(
         path: RouteNames.conversations,
         name: 'conversations',
-        builder: (context, state) => const ConversationsListScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const ConversationsListScreen()),
       ),
       GoRoute(
         path: RouteNames.chat,
         name: 'chat',
-        builder: (context, state) => ChatScreen(
-          conversationId: state.pathParameters['conversationId']!,
-          otherUserId: state.extra as String,
+        pageBuilder: (context, state) => _appPage(
+          context,
+          state,
+          ChatScreen(
+            conversationId: state.pathParameters['conversationId']!,
+            otherUserId: state.extra as String,
+          ),
         ),
       ),
       GoRoute(
         path: RouteNames.notifications,
         name: 'notifications',
-        builder: (context, state) => const NotificationsScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const NotificationsScreen()),
       ),
       GoRoute(
         path: RouteNames.community,
         name: 'community',
-        builder: (context, state) => const CommunityFeedScreen(),
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const CommunityFeedScreen()),
       ),
     ],
   );

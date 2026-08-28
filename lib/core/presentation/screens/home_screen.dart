@@ -7,6 +7,7 @@ import 'package:elderly_companion/core/theme/accessibility/accessibility_control
 import 'package:elderly_companion/core/theme/accessibility/accessibility_state.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
+import 'package:elderly_companion/core/widgets/staggered_entrance.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/notifications/presentation/widgets/notification_bell.dart';
@@ -106,52 +107,70 @@ class _NavTiles extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _NavTile(
-          icon: Icons.person_outline,
-          title: 'My profile',
-          subtitle: 'View and edit your details',
-          tone: _Tone.primary,
-          onTap: () => context.push(RouteNames.profile),
+        StaggeredEntrance(
+          index: 0,
+          child: _NavTile(
+            icon: Icons.person_outline,
+            title: 'My profile',
+            subtitle: 'View and edit your details',
+            tone: _Tone.primary,
+            onTap: () => context.push(RouteNames.profile),
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        _NavTile(
-          icon: Icons.handshake_outlined,
-          title: 'Find a match',
-          subtitle: 'Companions and helpers near you',
-          tone: _Tone.tertiary,
-          onTap: () => context.push(RouteNames.matching),
+        StaggeredEntrance(
+          index: 1,
+          child: _NavTile(
+            icon: Icons.handshake_outlined,
+            title: 'Find a match',
+            subtitle: 'Companions and helpers near you',
+            tone: _Tone.tertiary,
+            onTap: () => context.push(RouteNames.matching),
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        _NavTile(
-          icon: Icons.event_available_outlined,
-          title: 'Sessions',
-          subtitle: 'Your bookings and schedule',
-          tone: _Tone.primary,
-          onTap: () => context.push(RouteNames.scheduling),
+        StaggeredEntrance(
+          index: 2,
+          child: _NavTile(
+            icon: Icons.event_available_outlined,
+            title: 'Sessions',
+            subtitle: 'Your bookings and schedule',
+            tone: _Tone.primary,
+            onTap: () => context.push(RouteNames.scheduling),
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        _NavTile(
-          icon: Icons.verified_user_outlined,
-          title: 'Verification',
-          subtitle: 'Trust and safety status',
-          tone: _Tone.secondary,
-          onTap: () => context.push(RouteNames.verification),
+        StaggeredEntrance(
+          index: 3,
+          child: _NavTile(
+            icon: Icons.verified_user_outlined,
+            title: 'Verification',
+            subtitle: 'Trust and safety status',
+            tone: _Tone.secondary,
+            onTap: () => context.push(RouteNames.verification),
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        _NavTile(
-          icon: Icons.chat_bubble_outline,
-          title: 'Messages',
-          subtitle: 'Chat with your matches',
-          tone: _Tone.secondary,
-          onTap: () => context.push(RouteNames.conversations),
+        StaggeredEntrance(
+          index: 4,
+          child: _NavTile(
+            icon: Icons.chat_bubble_outline,
+            title: 'Messages',
+            subtitle: 'Chat with your matches',
+            tone: _Tone.secondary,
+            onTap: () => context.push(RouteNames.conversations),
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        _NavTile(
-          icon: Icons.forum_outlined,
-          title: 'Community',
-          subtitle: 'Thank-yous, updates and requests',
-          tone: _Tone.tertiary,
-          onTap: () => context.push(RouteNames.community),
+        StaggeredEntrance(
+          index: 5,
+          child: _NavTile(
+            icon: Icons.forum_outlined,
+            title: 'Community',
+            subtitle: 'Thank-yous, updates and requests',
+            tone: _Tone.tertiary,
+            onTap: () => context.push(RouteNames.community),
+          ),
         ),
         Consumer(
           builder: (context, ref, _) {
@@ -160,12 +179,15 @@ class _NavTiles extends StatelessWidget {
             return Column(
               children: [
                 const SizedBox(height: AppSpacing.sm),
-                _NavTile(
-                  icon: Icons.fact_check_outlined,
-                  title: 'Verification queue',
-                  subtitle: 'Review pending identity documents',
-                  tone: _Tone.primary,
-                  onTap: () => context.push(RouteNames.adminVerificationQueue),
+                StaggeredEntrance(
+                  index: 6,
+                  child: _NavTile(
+                    icon: Icons.fact_check_outlined,
+                    title: 'Verification queue',
+                    subtitle: 'Review pending identity documents',
+                    tone: _Tone.primary,
+                    onTap: () => context.push(RouteNames.adminVerificationQueue),
+                  ),
                 ),
               ],
             );

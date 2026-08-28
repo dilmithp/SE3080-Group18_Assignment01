@@ -13,7 +13,8 @@ import 'package:elderly_companion/core/widgets/app_status_icon.dart';
 import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/core/widgets/empty_view.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
-import 'package:elderly_companion/core/widgets/loading_view.dart';
+import 'package:elderly_companion/core/widgets/skeleton_loader.dart';
+import 'package:elderly_companion/core/widgets/staggered_entrance.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_criteria.dart';
@@ -261,7 +262,7 @@ class _Results extends StatelessWidget {
     if (isLoading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
-        child: LoadingView(message: 'Searching for matches near you...'),
+        child: SizedBox(height: 4 * 88, child: SkeletonList(count: 3)),
       );
     }
 
@@ -297,11 +298,14 @@ class _Results extends StatelessWidget {
 
     return Column(
       children: [
-        for (final candidate in results) ...[
-          _CandidateCard(
-            candidate: candidate,
-            simplified: simplified,
-            onTap: () => onTap(candidate),
+        for (final entry in results.asMap().entries) ...[
+          StaggeredEntrance(
+            index: entry.key,
+            child: _CandidateCard(
+              candidate: entry.value,
+              simplified: simplified,
+              onTap: () => onTap(entry.value),
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
@@ -338,11 +342,14 @@ class _CandidateCard extends StatelessWidget {
         onTap: onTap,
         child: Row(
           children: [
-            AppStatusIcon(
-              icon: Icons.person,
-              size: 72,
-              background: theme.colorScheme.primaryContainer,
-              foreground: theme.colorScheme.onPrimaryContainer,
+            Hero(
+              tag: 'match-avatar-${candidate.userId}',
+              child: AppStatusIcon(
+                icon: Icons.person,
+                size: 72,
+                background: theme.colorScheme.primaryContainer,
+                foreground: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -374,11 +381,14 @@ class _CandidateCard extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          AppStatusIcon(
-            icon: Icons.person,
-            size: 56,
-            background: theme.colorScheme.primaryContainer,
-            foreground: theme.colorScheme.onPrimaryContainer,
+          Hero(
+            tag: 'match-avatar-${candidate.userId}',
+            child: AppStatusIcon(
+              icon: Icons.person,
+              size: 56,
+              background: theme.colorScheme.primaryContainer,
+              foreground: theme.colorScheme.onPrimaryContainer,
+            ),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(

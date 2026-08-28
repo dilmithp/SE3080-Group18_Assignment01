@@ -9,7 +9,8 @@ import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
 import 'package:elderly_companion/core/widgets/empty_view.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
-import 'package:elderly_companion/core/widgets/loading_view.dart';
+import 'package:elderly_companion/core/widgets/skeleton_loader.dart';
+import 'package:elderly_companion/core/widgets/staggered_entrance.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/notifications/domain/entities/app_notification.dart';
 import 'package:elderly_companion/features/notifications/domain/entities/notification_type.dart';
@@ -52,7 +53,7 @@ class _NotificationsList extends ConsumerWidget {
     final notificationsAsync = ref.watch(notificationsForUserProvider(userId));
 
     return notificationsAsync.when(
-      loading: () => const LoadingView(message: 'Loading notifications…'),
+      loading: () => const SkeletonList(),
       error: (error, _) => ErrorView(
         message: 'Something went wrong loading your notifications.',
         onRetry: () => ref.invalidate(notificationsForUserProvider(userId)),
@@ -77,8 +78,10 @@ class _NotificationsList extends ConsumerWidget {
               ),
               itemCount: notifications.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-              itemBuilder: (context, index) =>
-                  _NotificationTile(notification: notifications[index]),
+              itemBuilder: (context, index) => StaggeredEntrance(
+                index: index,
+                child: _NotificationTile(notification: notifications[index]),
+              ),
             ),
           ),
         );

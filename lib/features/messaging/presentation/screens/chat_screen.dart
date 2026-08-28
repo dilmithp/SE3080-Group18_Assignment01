@@ -7,6 +7,7 @@ import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/core/widgets/empty_view.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
 import 'package:elderly_companion/core/widgets/loading_view.dart';
+import 'package:elderly_companion/core/widgets/staggered_entrance.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/messaging/domain/entities/chat_message.dart';
 import 'package:elderly_companion/features/messaging/presentation/providers/messaging_providers.dart';
@@ -117,9 +118,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
-                      return _MessageBubble(
-                        message: message,
-                        isMine: message.senderId == currentUserId,
+                      // No stagger delay (always index 0): each bubble
+                      // should pop in as soon as it mounts — a message that
+                      // just arrived shouldn't wait its turn behind however
+                      // many messages came before it in the conversation.
+                      return StaggeredEntrance(
+                        index: 0,
+                        child: _MessageBubble(
+                          message: message,
+                          isMine: message.senderId == currentUserId,
+                        ),
                       );
                     },
                   );
