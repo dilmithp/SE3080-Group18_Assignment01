@@ -57,6 +57,10 @@ class FirebaseProfilesRemoteDataSource implements ProfilesRemoteDataSource {
       ),
       accessibilityPrefs:
           Map<String, dynamic>.from(data['accessibilityPrefs'] as Map),
+      // Existing docs predate these fields, so read with a null-safe
+      // default rather than an unsafe cast.
+      emergencyContactName: data['emergencyContactName'] as String?,
+      emergencyContactPhone: data['emergencyContactPhone'] as String?,
     );
   }
 

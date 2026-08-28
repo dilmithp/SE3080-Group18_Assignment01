@@ -7,12 +7,17 @@ import 'package:elderly_companion/core/presentation/screens/splash_screen.dart';
 import 'package:elderly_companion/core/routing/route_names.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/app_user.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/screens/admin_verification_queue_screen.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/screens/login_screen.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/screens/signup_screen.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/screens/verification_screen.dart';
+import 'package:elderly_companion/features/community/presentation/screens/community_feed_screen.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/matching/presentation/screens/match_details_screen.dart';
 import 'package:elderly_companion/features/matching/presentation/screens/matching_screen.dart';
+import 'package:elderly_companion/features/messaging/presentation/screens/chat_screen.dart';
+import 'package:elderly_companion/features/messaging/presentation/screens/conversations_list_screen.dart';
+import 'package:elderly_companion/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/accessibility_settings_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/edit_profile_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/profile_screen.dart';
@@ -145,6 +150,34 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => SessionSeriesScreen(
           seriesId: state.pathParameters['seriesId']!,
         ),
+      ),
+      GoRoute(
+        path: RouteNames.adminVerificationQueue,
+        name: 'adminVerificationQueue',
+        builder: (context, state) => const AdminVerificationQueueScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.conversations,
+        name: 'conversations',
+        builder: (context, state) => const ConversationsListScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.chat,
+        name: 'chat',
+        builder: (context, state) => ChatScreen(
+          conversationId: state.pathParameters['conversationId']!,
+          otherUserId: state.extra as String,
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.notifications,
+        name: 'notifications',
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.community,
+        name: 'community',
+        builder: (context, state) => const CommunityFeedScreen(),
       ),
     ],
   );

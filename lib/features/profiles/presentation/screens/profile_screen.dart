@@ -11,8 +11,10 @@ import 'package:elderly_companion/core/widgets/empty_view.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
 import 'package:elderly_companion/core/widgets/loading_view.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/widgets/trust_badge_chip.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
+import 'package:elderly_companion/features/profiles/presentation/widgets/emergency_contact_card.dart';
 
 /// Owner: Perera (features/profiles). Shows the signed-in user's own
 /// profile, or invites them to create one if [profileProvider] has nothing
@@ -106,7 +108,9 @@ class _ProfileView extends StatelessWidget {
                 child: Column(
                   children: [
                     _Avatar(photoUrl: profile.photoUrl),
-                    const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.sm),
+                    _TrustBadge(userId: profile.userId),
+                    const SizedBox(height: AppSpacing.sm),
                     Text(
                       profile.displayName.isEmpty
                           ? 'Add your name'
@@ -138,6 +142,10 @@ class _ProfileView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
+              EmergencyContactCard(profile: profile),
+              if (profile.emergencyContactName?.trim().isNotEmpty == true ||
+                  profile.emergencyContactPhone?.trim().isNotEmpty == true)
+                const SizedBox(height: AppSpacing.md),
               if (profile.bio.isNotEmpty) ...[
                 AppCard(
                   child: Column(
@@ -194,6 +202,24 @@ class _ProfileView extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Watches the signed-in user's own trust score and renders it as a
+/// [TrustBadgeChip]. Most users have no `trust_scores` document yet (see
+/// [TrustBadge]'s doc comment) — [AsyncValue.valueOrNull] folds both "still
+/// loading" and "no document" to `null`, which [TrustBadgeChip] already
+/// renders as the "New member" tier, so there is nothing extra to handle
+/// here.
+class _TrustBadge extends ConsumerWidget {
+  const _TrustBadge({required this.userId});
+
+  final String userId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trustScoreAsync = ref.watch(watchTrustScoreProvider(userId));
+    return TrustBadgeChip(trustScore: trustScoreAsync.valueOrNull);
   }
 }
 
