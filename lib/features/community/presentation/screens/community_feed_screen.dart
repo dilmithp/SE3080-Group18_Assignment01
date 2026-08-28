@@ -8,6 +8,8 @@ import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/core/widgets/empty_view.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
 import 'package:elderly_companion/core/widgets/loading_view.dart';
+import 'package:elderly_companion/core/widgets/skeleton_loader.dart';
+import 'package:elderly_companion/core/widgets/staggered_entrance.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/community/domain/entities/community_post.dart';
 import 'package:elderly_companion/features/community/presentation/providers/community_providers.dart';
@@ -83,7 +85,7 @@ class _CommunityFeedBody extends ConsumerWidget {
     final feedAsync = ref.watch(communityFeedProvider);
 
     return feedAsync.when(
-      loading: () => const LoadingView(),
+      loading: () => const SkeletonList(),
       error: (error, _) => ErrorView(message: error.toString()),
       data: (posts) {
         if (posts.isEmpty) {
@@ -97,8 +99,10 @@ class _CommunityFeedBody extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           itemCount: posts.length,
           separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-          itemBuilder: (context, index) =>
-              _PostCard(post: posts[index], currentUserId: userId),
+          itemBuilder: (context, index) => StaggeredEntrance(
+            index: index,
+            child: _PostCard(post: posts[index], currentUserId: userId),
+          ),
         );
       },
     );

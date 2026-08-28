@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_status_icon.dart';
+import 'package:elderly_companion/core/widgets/staggered_entrance.dart';
 
 /// Full-space empty state (no results, nothing booked yet, etc.).
 class EmptyView extends StatelessWidget {
@@ -32,36 +33,39 @@ class EmptyView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return StatusLayout(
-      children: [
-        AppStatusIcon(icon: icon),
-        const SizedBox(height: AppSpacing.lg),
-        if (title != null) ...[
-          Text(title!, style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
-          const SizedBox(height: AppSpacing.sm),
-        ],
-        Text(
-          message,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        if (action != null) ...[
-          const SizedBox(height: AppSpacing.xl),
-          action!,
-        ],
-        if (footnote != null) ...[
+    return StaggeredEntrance(
+      index: 0,
+      child: StatusLayout(
+        children: [
+          AppStatusIcon(icon: icon),
           const SizedBox(height: AppSpacing.lg),
+          if (title != null) ...[
+            Text(title!, style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           Text(
-            footnote!,
-            style: theme.textTheme.bodySmall?.copyWith(
+            message,
+            style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
+          if (action != null) ...[
+            const SizedBox(height: AppSpacing.xl),
+            action!,
+          ],
+          if (footnote != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              footnote!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

@@ -59,11 +59,14 @@ class MatchDetailsScreen extends ConsumerWidget {
                       AppCard(
                         child: Row(
                           children: [
-                            AppStatusIcon(
-                              icon: Icons.person,
-                              size: 72,
-                              background: theme.colorScheme.primaryContainer,
-                              foreground: theme.colorScheme.onPrimaryContainer,
+                            Hero(
+                              tag: 'match-avatar-${candidate.userId}',
+                              child: AppStatusIcon(
+                                icon: Icons.person,
+                                size: 72,
+                                background: theme.colorScheme.primaryContainer,
+                                foreground: theme.colorScheme.onPrimaryContainer,
+                              ),
                             ),
                             const SizedBox(width: AppSpacing.md),
                             Expanded(
