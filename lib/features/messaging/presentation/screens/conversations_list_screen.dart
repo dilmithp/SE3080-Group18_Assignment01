@@ -7,7 +7,8 @@ import 'package:elderly_companion/core/utils/extensions.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
 import 'package:elderly_companion/core/widgets/empty_view.dart';
 import 'package:elderly_companion/core/widgets/error_view.dart';
-import 'package:elderly_companion/core/widgets/loading_view.dart';
+import 'package:elderly_companion/core/widgets/skeleton_loader.dart';
+import 'package:elderly_companion/core/widgets/staggered_entrance.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/messaging/domain/entities/conversation.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
@@ -46,7 +47,7 @@ class _ConversationsBody extends ConsumerWidget {
     final conversationsAsync = ref.watch(conversationsForUserProvider(currentUserId));
 
     return conversationsAsync.when(
-      loading: () => const LoadingView(),
+      loading: () => const SkeletonList(),
       error: (error, _) => ErrorView(message: error.toString()),
       data: (conversations) {
         if (conversations.isEmpty) {
@@ -68,9 +69,12 @@ class _ConversationsBody extends ConsumerWidget {
                 final conversation = conversations[index];
                 final otherUserId = conversation.otherParticipantId(currentUserId);
                 if (otherUserId == null) return const SizedBox.shrink();
-                return _ConversationTile(
-                  conversation: conversation,
-                  otherUserId: otherUserId,
+                return StaggeredEntrance(
+                  index: index,
+                  child: _ConversationTile(
+                    conversation: conversation,
+                    otherUserId: otherUserId,
+                  ),
                 );
               },
             ),
