@@ -34,6 +34,8 @@ class UserProfileDto with _$UserProfileDto {
     required List<String> helpNeeded,
     required List<Map<String, dynamic>> availabilityWindows,
     required Map<String, dynamic> accessibilityPrefs,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
   }) = _UserProfileDto;
 
   factory UserProfileDto.fromJson(Map<String, dynamic> json) =>
@@ -64,6 +66,8 @@ class UserProfileDto with _$UserProfileDto {
           'simplifiedInterface': entity.accessibilityPrefs.simplifiedInterface,
           'communicationNotes': entity.accessibilityPrefs.communicationNotes,
         },
+        emergencyContactName: entity.emergencyContactName,
+        emergencyContactPhone: entity.emergencyContactPhone,
       );
 
   UserProfile toEntity() => UserProfile(
@@ -91,5 +95,7 @@ class UserProfileDto with _$UserProfileDto {
               accessibilityPrefs['simplifiedInterface'] as bool? ?? false,
           communicationNotes: accessibilityPrefs['communicationNotes'] as String?,
         ),
+        emergencyContactName: emergencyContactName,
+        emergencyContactPhone: emergencyContactPhone,
       );
 }

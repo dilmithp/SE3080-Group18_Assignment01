@@ -17,6 +17,8 @@ class UserProfile {
     required this.helpNeeded,
     required this.availabilityWindows,
     required this.accessibilityPrefs,
+    this.emergencyContactName,
+    this.emergencyContactPhone,
   });
 
   final String userId;
@@ -30,6 +32,11 @@ class UserProfile {
   final List<AvailabilityWindow> availabilityWindows;
   final AccessibilityPreferences accessibilityPrefs;
 
+  /// Optional safety contact, shown/dialable via [EmergencyContactCard].
+  /// Nullable and optional so no existing call site breaks.
+  final String? emergencyContactName;
+  final String? emergencyContactPhone;
+
   UserProfile copyWith({
     String? userId,
     String? displayName,
@@ -41,6 +48,8 @@ class UserProfile {
     List<String>? helpNeeded,
     List<AvailabilityWindow>? availabilityWindows,
     AccessibilityPreferences? accessibilityPrefs,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
   }) {
     return UserProfile(
       userId: userId ?? this.userId,
@@ -53,6 +62,8 @@ class UserProfile {
       helpNeeded: helpNeeded ?? this.helpNeeded,
       availabilityWindows: availabilityWindows ?? this.availabilityWindows,
       accessibilityPrefs: accessibilityPrefs ?? this.accessibilityPrefs,
+      emergencyContactName: emergencyContactName ?? this.emergencyContactName,
+      emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
     );
   }
 
@@ -70,7 +81,9 @@ class UserProfile {
           _listEquals(skillsOffered, other.skillsOffered) &&
           _listEquals(helpNeeded, other.helpNeeded) &&
           _listEquals(availabilityWindows, other.availabilityWindows) &&
-          accessibilityPrefs == other.accessibilityPrefs;
+          accessibilityPrefs == other.accessibilityPrefs &&
+          emergencyContactName == other.emergencyContactName &&
+          emergencyContactPhone == other.emergencyContactPhone;
 
   @override
   int get hashCode => Object.hash(
@@ -84,6 +97,8 @@ class UserProfile {
         Object.hashAll(helpNeeded),
         Object.hashAll(availabilityWindows),
         accessibilityPrefs,
+        emergencyContactName,
+        emergencyContactPhone,
       );
 }
 

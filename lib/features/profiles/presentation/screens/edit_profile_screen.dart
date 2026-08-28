@@ -101,6 +101,8 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
   late final TextEditingController _skillsController;
   late final TextEditingController _helpController;
   late final TextEditingController _communicationNotesController;
+  late final TextEditingController _emergencyContactNameController;
+  late final TextEditingController _emergencyContactPhoneController;
   late List<AvailabilityWindow> _availabilityWindows;
 
   String? _photoUrl;
@@ -136,6 +138,10 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     _helpController = TextEditingController(text: base.helpNeeded.join(', '));
     _communicationNotesController =
         TextEditingController(text: base.accessibilityPrefs.communicationNotes ?? '');
+    _emergencyContactNameController =
+        TextEditingController(text: base.emergencyContactName ?? '');
+    _emergencyContactPhoneController =
+        TextEditingController(text: base.emergencyContactPhone ?? '');
     _availabilityWindows = List.of(base.availabilityWindows);
     _photoUrl = base.photoUrl;
   }
@@ -148,6 +154,8 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     _skillsController.dispose();
     _helpController.dispose();
     _communicationNotesController.dispose();
+    _emergencyContactNameController.dispose();
+    _emergencyContactPhoneController.dispose();
     super.dispose();
   }
 
@@ -313,8 +321,34 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
         ),
         photoUrl: _photoUrl,
       );
+      final emergencyContactName =
+          _emergencyContactNameController.text.trim().isEmpty
+              ? null
+              : _emergencyContactNameController.text.trim();
+      final emergencyContactPhone =
+          _emergencyContactPhoneController.text.trim().isEmpty
+              ? null
+              : _emergencyContactPhoneController.text.trim();
+      // Same `x ?? this.x` pitfall as accessibilityPrefs above, but at the
+      // entity level this time: UserProfile.copyWith can't be used to clear
+      // emergencyContactName/Phone to null once set, so rebuild the entity
+      // directly for those two fields instead of chaining another copyWith.
+      final withEmergencyContact = UserProfile(
+        userId: updated.userId,
+        displayName: updated.displayName,
+        photoUrl: updated.photoUrl,
+        bio: updated.bio,
+        locality: updated.locality,
+        geoPoint: updated.geoPoint,
+        skillsOffered: updated.skillsOffered,
+        helpNeeded: updated.helpNeeded,
+        availabilityWindows: updated.availabilityWindows,
+        accessibilityPrefs: updated.accessibilityPrefs,
+        emergencyContactName: emergencyContactName,
+        emergencyContactPhone: emergencyContactPhone,
+      );
       final useCase = ref.read(updateProfileUseCaseProvider);
-      final result = await useCase(updated);
+      final result = await useCase(withEmergencyContact);
       result.fold(
         (failure) => messenger
           ..hideCurrentSnackBar()
@@ -408,6 +442,25 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
                     helperText: 'Shown to a matched volunteer before a session',
                     controller: _communicationNotesController,
                     maxLines: 3,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('Emergency contact', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: AppSpacing.sm),
+                  AppTextField(
+                    label: 'Contact name (optional)',
+                    hint: 'e.g. a family member or close friend',
+                    controller: _emergencyContactNameController,
+                    prefixIcon: Icons.badge_outlined,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    label: 'Contact phone (optional)',
+                    hint: 'e.g. +94 71 234 5678',
+                    helperText: 'Shown with a one-tap call button on your profile',
+                    controller: _emergencyContactPhoneController,
+                    prefixIcon: Icons.call_outlined,
+                    keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text('Availability', style: Theme.of(context).textTheme.titleLarge),

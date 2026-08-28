@@ -13,11 +13,22 @@ class RouteNames {
 
   // auth_trust
   static const String verification = '/verification';
+  static const String adminVerificationQueue = '/admin/verification';
 
   // profiles
   static const String profile = '/profile';
   static const String editProfile = '/profile/edit';
   static const String accessibilitySettings = '/accessibility-settings';
+
+  // messaging
+  static const String conversations = '/conversations';
+  static const String chat = '/chat/:conversationId';
+
+  // notifications
+  static const String notifications = '/notifications';
+
+  // community
+  static const String community = '/community';
 
   // matching
   static const String matching = '/matching';
@@ -28,10 +39,19 @@ class RouteNames {
   static const String sessionDetails = '/scheduling/:sessionId';
   static const String sessionFeedback = '/scheduling/:sessionId/feedback';
 
+  /// One recurring series. Three segments, so it cannot collide with the
+  /// two-segment [sessionDetails] pattern above.
+  static const String sessionSeries = '/scheduling/series/:seriesId';
+
   static String matchDetailsPath(String candidateId) => '/matching/$candidateId';
+
+  static String chatPath(String conversationId) => '/chat/$conversationId';
 
   static String sessionDetailsPath(String sessionId) => '/scheduling/$sessionId';
 
   static String sessionFeedbackPath(String sessionId) =>
       '/scheduling/$sessionId/feedback';
+
+  static String sessionSeriesPath(String seriesId) =>
+      '/scheduling/series/$seriesId';
 }

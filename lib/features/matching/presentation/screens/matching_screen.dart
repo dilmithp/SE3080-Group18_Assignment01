@@ -12,6 +12,8 @@ import 'package:elderly_companion/core/widgets/app_card.dart';
 import 'package:elderly_companion/core/widgets/app_status_icon.dart';
 import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/core/widgets/empty_view.dart';
+import 'package:elderly_companion/core/widgets/error_view.dart';
+import 'package:elderly_companion/core/widgets/loading_view.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_criteria.dart';
@@ -214,6 +216,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   _Results(
+                    isLoading: _isSearching,
                     hasSearched: _hasSearched,
                     failure: _failure,
                     results: _results,
@@ -233,6 +236,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
 
 class _Results extends StatelessWidget {
   const _Results({
+    required this.isLoading,
     required this.hasSearched,
     required this.failure,
     required this.results,
@@ -241,6 +245,7 @@ class _Results extends StatelessWidget {
     required this.onTap,
   });
 
+  final bool isLoading;
   final bool hasSearched;
   final Failure? failure;
   final List<MatchCandidate> results;
@@ -250,23 +255,20 @@ class _Results extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Checked first so a re-search (retry, or edited filters) shows a clear
+    // loading panel here rather than leaving stale results/errors on screen
+    // with only the small button spinner as a hint that anything changed.
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+        child: LoadingView(message: 'Searching for matches near you...'),
+      );
+    }
+
     if (failure != null) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-        child: Column(
-          children: [
-            Text(
-              failure!.message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppButton(label: 'Try again', icon: Icons.refresh, onPressed: onRetry),
-          ],
-        ),
+        child: ErrorView.fromFailure(failure!, onRetry: onRetry),
       );
     }
 

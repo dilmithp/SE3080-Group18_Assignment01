@@ -12,7 +12,9 @@ import 'package:elderly_companion/core/widgets/app_status_icon.dart';
 import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/core/widgets/empty_view.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/widgets/trust_badge_chip.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
+import 'package:elderly_companion/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:elderly_companion/features/scheduling/presentation/providers/scheduling_providers.dart';
 
 /// Owner: Wijekoon (features/matching). [candidate] arrives via the
@@ -73,6 +75,12 @@ class MatchDetailsScreen extends ConsumerWidget {
                                         ? 'Companion'
                                         : candidate.profile.displayName,
                                     style: theme.textTheme.headlineMedium,
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  TrustBadgeChip(
+                                    trustScore: ref
+                                        .watch(watchTrustScoreProvider(candidate.userId))
+                                        .valueOrNull,
                                   ),
                                   if (candidate.profile.locality.isNotEmpty)
                                     Text(
@@ -227,6 +235,13 @@ class MatchDetailsScreen extends ConsumerWidget {
                         icon: Icons.event_available_outlined,
                         onPressed: () => _openBookingSheet(context, ref, candidate),
                       ),
+                      const SizedBox(height: AppSpacing.sm),
+                      AppButton(
+                        label: 'Message',
+                        icon: Icons.chat_bubble_outline,
+                        secondary: true,
+                        onPressed: () => _openConversation(context, ref, candidate),
+                      ),
                     ],
                   ),
                 ),
@@ -255,6 +270,38 @@ class MatchDetailsScreen extends ConsumerWidget {
         requesterId: requesterId,
         volunteerId: candidate.userId,
       ),
+    );
+  }
+
+  /// Gets (or, on first contact, creates) the 1:1 conversation with
+  /// [candidate] and opens it. `/chat/:conversationId` is registered by a
+  /// later integration pass — see messaging's report for the exact
+  /// `GoRoute` shape.
+  Future<void> _openConversation(
+    BuildContext context,
+    WidgetRef ref,
+    MatchCandidate candidate,
+  ) async {
+    final currentUserId = ref.read(authStateProvider).valueOrNull?.id;
+    if (currentUserId == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Sign in first.')));
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final useCase = ref.read(getOrCreateConversationUseCaseProvider);
+    final result = await useCase(
+      userId: currentUserId,
+      otherUserId: candidate.userId,
+    );
+    if (!context.mounted) return;
+    result.fold(
+      (failure) => messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(failure.message))),
+      (conversation) =>
+          context.push('/chat/${conversation.id}', extra: candidate.userId),
     );
   }
 }
