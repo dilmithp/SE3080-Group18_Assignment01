@@ -14,6 +14,12 @@ import 'package:elderly_companion/features/profiles/presentation/providers/profi
 /// - High Contrast Mode toggle
 /// - Simplified Interface Mode toggle
 /// - Voice-Guided Prompts toggle
+///
+/// Every change also writes through to the signed-in user's persisted
+/// `UserProfile.accessibilityPrefs` (best-effort, silently skipped if not
+/// signed in or no profile exists yet) so it follows them to a new device —
+/// see AccessibilityProfileSync for the seed-on-sign-in half of that sync.
+/// `voiceGuidedPrompts` has no persisted counterpart and stays local-only.
 class AccessibilitySettingsScreen extends ConsumerWidget {
   const AccessibilitySettingsScreen({super.key});
 
@@ -47,7 +53,7 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           _buildTextScaleCard(context, ref, accessibility, controller),
           const SizedBox(height: 16),
-          _buildDisplayCard(context, accessibility, controller),
+          _buildDisplayCard(context, ref, accessibility, controller),
           const SizedBox(height: 16),
           _buildVoiceGuidanceCard(context, accessibility, controller),
           const SizedBox(height: 24),
@@ -59,6 +65,7 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
               await controller.setHighContrast(false);
               await controller.setSimplifiedMode(false);
               await controller.setVoiceGuidedPrompts(false);
+              await _writeThrough(ref, ref.read(accessibilityControllerProvider));
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -172,28 +179,40 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
             max: AccessibilityState.maxTextScale,
             divisions: 5,
             label: '$scalePercent%',
-            onChanged: (val) => controller.setTextScale(val),
+            onChanged: (val) async {
+              await controller.setTextScale(val);
+              await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+            },
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => controller.setTextScale(1.0),
+                  onPressed: () async {
+                    await controller.setTextScale(1.0);
+                    await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+                  },
                   child: const Text('Standard'),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => controller.setTextScale(1.3),
+                  onPressed: () async {
+                    await controller.setTextScale(1.3);
+                    await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+                  },
                   child: const Text('Large'),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => controller.setTextScale(1.5),
+                  onPressed: () async {
+                    await controller.setTextScale(1.5);
+                    await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+                  },
                   child: const Text('Extra Large'),
                 ),
               ),
@@ -206,6 +225,7 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
 
   Widget _buildDisplayCard(
     BuildContext context,
+    WidgetRef ref,
     AccessibilityState state,
     AccessibilityController controller,
   ) {
@@ -229,7 +249,10 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
               'Increases text and button contrast for higher readability.',
             ),
             value: state.highContrast,
-            onChanged: (enabled) => controller.setHighContrast(enabled),
+            onChanged: (enabled) async {
+              await controller.setHighContrast(enabled);
+              await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+            },
           ),
           const Divider(),
           SwitchListTile(
@@ -239,7 +262,10 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
               'Reduces visual clutter and enlarges touch controls.',
             ),
             value: state.simplifiedMode,
-            onChanged: (enabled) => controller.setSimplifiedMode(enabled),
+            onChanged: (enabled) async {
+              await controller.setSimplifiedMode(enabled);
+              await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+            },
           ),
         ],
       ),
