@@ -81,10 +81,15 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
       // `.future` (rather than reading the provider's cached AsyncValue)
       // avoids a race against the stream's first emission on a screen
       // that never otherwise watches this provider.
-      final searcherId = ref.read(authStateProvider).valueOrNull?.id;
-      final origin = searcherId == null
-          ? null
-          : (await ref.read(profileProvider(searcherId).future))?.geoPoint;
+      final viewer = ref.read(authStateProvider).valueOrNull;
+      if (viewer == null) {
+        setState(() {
+          _isSearching = false;
+          _failure = const AuthFailure('Sign in to search for matches.');
+        });
+        return;
+      }
+      final origin = (await ref.read(profileProvider(viewer.id).future))?.geoPoint;
 
       final result = await useCase(
         MatchCriteria(
@@ -92,6 +97,8 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
           radiusKm: 5,
           requiredSkills: skills,
           preferredTimes: _preferredDays.toList(),
+          viewerId: viewer.id,
+          viewerRole: viewer.role,
           origin: origin,
           strategyType: _strategyType,
         ),

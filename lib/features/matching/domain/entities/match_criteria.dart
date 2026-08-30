@@ -1,3 +1,4 @@
+import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
 import 'package:elderly_companion/features/matching/domain/strategies/matching_strategy.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/geo_coordinates.dart';
 
@@ -9,6 +10,8 @@ class MatchCriteria {
     required this.radiusKm,
     required this.requiredSkills,
     required this.preferredTimes,
+    required this.viewerId,
+    required this.viewerRole,
     this.origin,
     this.strategyType = MatchingStrategyType.balanced,
   });
@@ -17,6 +20,13 @@ class MatchCriteria {
   final double radiusKm;
   final List<String> requiredSkills;
   final List<String> preferredTimes;
+
+  /// The searching user's own id, always excluded from their own results.
+  final String viewerId;
+
+  /// Who may see whom: elderly members only see volunteers; volunteers see
+  /// both elderly members and other volunteers; admins see everyone.
+  final UserRole viewerRole;
 
   /// The searching user's own coordinates, when known. Optional because
   /// not every caller has a resolved profile (e.g. a searcher who hasn't
@@ -32,6 +42,8 @@ class MatchCriteria {
     double? radiusKm,
     List<String>? requiredSkills,
     List<String>? preferredTimes,
+    String? viewerId,
+    UserRole? viewerRole,
     GeoCoordinates? origin,
     MatchingStrategyType? strategyType,
   }) {
@@ -40,6 +52,8 @@ class MatchCriteria {
       radiusKm: radiusKm ?? this.radiusKm,
       requiredSkills: requiredSkills ?? this.requiredSkills,
       preferredTimes: preferredTimes ?? this.preferredTimes,
+      viewerId: viewerId ?? this.viewerId,
+      viewerRole: viewerRole ?? this.viewerRole,
       origin: origin ?? this.origin,
       strategyType: strategyType ?? this.strategyType,
     );
@@ -54,6 +68,8 @@ class MatchCriteria {
           radiusKm == other.radiusKm &&
           _listEquals(requiredSkills, other.requiredSkills) &&
           _listEquals(preferredTimes, other.preferredTimes) &&
+          viewerId == other.viewerId &&
+          viewerRole == other.viewerRole &&
           origin == other.origin &&
           strategyType == other.strategyType;
 
@@ -63,6 +79,8 @@ class MatchCriteria {
         radiusKm,
         Object.hashAll(requiredSkills),
         Object.hashAll(preferredTimes),
+        viewerId,
+        viewerRole,
         origin,
         strategyType,
       );
