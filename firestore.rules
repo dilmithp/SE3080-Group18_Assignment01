@@ -20,8 +20,19 @@ service cloud.firestore {
     // matching/profile display); only the owner or an admin can write.
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      // A user may create their own doc, but never as an admin — self-
+      // granting the admin role at signup would otherwise be one write
+      // away. The first admin (and any admin after that) has to be set by
+      // editing Firestore directly (console or Admin SDK), not through the
+      // app.
+      allow create: if isOwner(userId) && request.resource.data.role != 'admin';
+      // An owner may update their own doc freely — including correcting
+      // their own role between the self-service options (see
+      // SelectRoleScreen, which does exactly this right after a brand-new
+      // passwordless sign-in) — as long as the new value isn't 'admin'.
+      // Only an existing admin can grant the admin role, to anyone.
+      allow update: if (isOwner(userId) && request.resource.data.role != 'admin') ||
+          isAdmin();
       allow delete: if false;
     }
 

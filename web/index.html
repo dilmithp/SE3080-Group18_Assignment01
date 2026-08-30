@@ -31,6 +31,28 @@
 
   <title>elderly_companion</title>
   <link rel="manifest" href="manifest.json">
+
+  <!--
+    Loads the Google Maps JS SDK using a key from maps_config.js, which is
+    gitignored on purpose — see maps_config.js.example. Never hardcode a key
+    directly in this file: it's tracked in git.
+  -->
+  <script src="maps_config.js"></script>
+  <script>
+    (function () {
+      var key = window.GOOGLE_MAPS_API_KEY;
+      if (!key) {
+        console.warn(
+          'Google Maps API key not configured — copy web/maps_config.js.example ' +
+          'to web/maps_config.js and fill in a real key. Map features will not load.'
+        );
+        return;
+      }
+      var script = document.createElement('script');
+      script.src = 'https://maps.googleapis.com/maps/api/js?key=' + key;
+      document.head.appendChild(script);
+    })();
+  </script>
 </head>
 <body>
   <!--

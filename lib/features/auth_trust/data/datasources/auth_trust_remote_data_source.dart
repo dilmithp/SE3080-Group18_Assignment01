@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:elderly_companion/core/config/app_config.dart';
 import 'package:elderly_companion/core/error/exceptions.dart';
@@ -29,6 +30,20 @@ abstract class AuthTrustRemoteDataSource {
   Future<void> signOut();
 
   Stream<AppUserDto?> authStateChanges();
+
+  Future<void> sendSignInLinkToEmail(String email);
+
+  Future<AppUserDto> signInWithEmailLink({
+    required String email,
+    required String emailLink,
+  });
+
+  bool isSignInWithEmailLink(String link);
+
+  Future<AppUserDto> updateUserRole({
+    required String userId,
+    required UserRole role,
+  });
 
   Future<VerificationRequestDto> submitVerificationRequest({
     required String userId,
@@ -162,6 +177,116 @@ class FirebaseAuthTrustRemoteDataSource implements AuthTrustRemoteDataSource {
       return dto;
     } on FirebaseAuthException catch (e) {
       throw AuthException(e.message ?? 'Sign-in failed.');
+    } on NotFoundException {
+      rethrow;
+    } catch (_) {
+      throw const ServerException();
+    }
+  }
+
+  /// Web-only: points the emailed link back at this app's own origin, read
+  /// dynamically via [Uri.base] rather than hardcoded, so `flutter run -d
+  /// chrome` on any `localhost` port works without a Firebase Console
+  /// change (localhost is an authorized domain by default). Firebase Dynamic
+  /// Links are deprecated/shut down, so this deliberately avoids them —
+  /// `handleCodeInApp: true` plus a plain web URL is all `signInWithEmailLink`
+  /// needs. Deploying anywhere other than localhost requires adding that
+  /// domain under Firebase Console -> Authentication -> Settings ->
+  /// Authorized domains.
+  ActionCodeSettings _buildActionCodeSettings() {
+    final origin = kIsWeb ? Uri.base.origin : 'https://localhost';
+    return ActionCodeSettings(url: origin, handleCodeInApp: true);
+  }
+
+  @override
+  Future<void> sendSignInLinkToEmail(String email) async {
+    try {
+      await _firebaseAuth.sendSignInLinkToEmail(
+        email: email,
+        actionCodeSettings: _buildActionCodeSettings(),
+      );
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(e.message ?? 'Could not send sign-in link.');
+    } catch (_) {
+      throw const ServerException();
+    }
+  }
+
+  @override
+  bool isSignInWithEmailLink(String link) {
+    return _firebaseAuth.isSignInWithEmailLink(link);
+  }
+
+  @override
+  Future<AppUserDto> signInWithEmailLink({
+    required String email,
+    required String emailLink,
+  }) async {
+    try {
+      final credential = await _firebaseAuth.signInWithEmailLink(
+        email: email,
+        emailLink: emailLink,
+      );
+      final uid = credential.user!.uid;
+      final existing = await _firestoreService.getDocument(
+        collectionPath: AppConfig.usersCollection,
+        docId: uid,
+        fromJson: (data) => _appUserDtoFromData(uid, data),
+      );
+      if (existing != null) return existing;
+
+      // Brand-new user: passwordless sign-in has no form to collect a real
+      // role, so seed a placeholder here. authStateProvider only treats a
+      // signed-in Firebase user as logged in once this doc exists; the
+      // presentation layer is responsible for prompting the user to correct
+      // this placeholder via [updateUserRole] before landing on home.
+      final now = Timestamp.now();
+      await _firestoreService.setDocument(
+        collectionPath: AppConfig.usersCollection,
+        docId: uid,
+        data: {
+          'email': email,
+          'phone': '',
+          'role': UserRole.elderly.name,
+          'isVerified': false,
+          'createdAt': now,
+        },
+      );
+      return AppUserDto(
+        id: uid,
+        email: email,
+        phone: '',
+        role: UserRole.elderly.name,
+        isVerified: false,
+        createdAtMillis: now.millisecondsSinceEpoch,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(e.message ?? 'That sign-in link is invalid or has expired.');
+    } catch (_) {
+      throw const ServerException();
+    }
+  }
+
+  @override
+  Future<AppUserDto> updateUserRole({
+    required String userId,
+    required UserRole role,
+  }) async {
+    try {
+      await _firestoreService.setDocument(
+        collectionPath: AppConfig.usersCollection,
+        docId: userId,
+        data: {'role': role.name},
+      );
+      final dto = await _firestoreService.getDocument(
+        collectionPath: AppConfig.usersCollection,
+        docId: userId,
+        fromJson: (data) => _appUserDtoFromData(userId, data),
+      );
+      if (dto == null) {
+        throw const NotFoundException('User profile not found.');
+      }
+      return dto;
     } on NotFoundException {
       rethrow;
     } catch (_) {

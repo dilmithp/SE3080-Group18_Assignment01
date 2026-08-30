@@ -57,6 +57,9 @@ coverage/
 # Env
 .env
 .env.*
+
+# Google Maps API key — never commit, see web/maps_config.js.example
+web/maps_config.js
 /.claude-flow
 /.claude-flow
 /macos

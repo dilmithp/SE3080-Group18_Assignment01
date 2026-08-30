@@ -9,6 +9,7 @@ import 'package:elderly_companion/core/widgets/app_brand_mark.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
 import 'package:elderly_companion/core/widgets/app_text_field.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/screens/email_link_sign_in_screen.dart';
 
 /// Owner: Pathirana (features/auth_trust). Real sign-in via
 /// [SignInWithEmailUseCase] — successful sign-in updates [authStateProvider]
@@ -125,7 +126,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       isLoading: _isSubmitting,
                       onPressed: _submit,
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.sm),
+                    // Pushed with the plain Navigator, not `context.push` —
+                    // this sub-flow isn't a named go_router route.
+                    TextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const EmailLinkSignInScreen(),
+                        ),
+                      ),
+                      child: const Text('Sign in with an email link instead'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
                     Text(
                       'New to Elderly Companion?',
                       style: theme.textTheme.bodyMedium?.copyWith(

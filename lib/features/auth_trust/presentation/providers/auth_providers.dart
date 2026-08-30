@@ -13,9 +13,12 @@ import 'package:elderly_companion/features/auth_trust/domain/repositories/trust_
 import 'package:elderly_companion/features/auth_trust/domain/repositories/verification_repository.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/get_trust_score_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/review_verification_request_usecase.dart';
+import 'package:elderly_companion/features/auth_trust/domain/usecases/send_sign_in_link_usecase.dart';
+import 'package:elderly_companion/features/auth_trust/domain/usecases/sign_in_with_email_link_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/sign_in_with_email_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/sign_up_with_email_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/submit_verification_request_usecase.dart';
+import 'package:elderly_companion/features/auth_trust/domain/usecases/update_user_role_usecase.dart';
 
 /// All Dependency-Inversion wiring for auth_trust lives here: presentation
 /// and domain depend only on the abstract repository interfaces above;
@@ -53,6 +56,19 @@ final signInWithEmailUseCaseProvider = Provider<SignInWithEmailUseCase>((ref) {
 
 final signUpWithEmailUseCaseProvider = Provider<SignUpWithEmailUseCase>((ref) {
   return SignUpWithEmailUseCase(ref.watch(authRepositoryProvider));
+});
+
+final sendSignInLinkUseCaseProvider = Provider<SendSignInLinkUseCase>((ref) {
+  return SendSignInLinkUseCase(ref.watch(authRepositoryProvider));
+});
+
+final signInWithEmailLinkUseCaseProvider =
+    Provider<SignInWithEmailLinkUseCase>((ref) {
+  return SignInWithEmailLinkUseCase(ref.watch(authRepositoryProvider));
+});
+
+final updateUserRoleUseCaseProvider = Provider<UpdateUserRoleUseCase>((ref) {
+  return UpdateUserRoleUseCase(ref.watch(authRepositoryProvider));
 });
 
 final submitVerificationRequestUseCaseProvider =

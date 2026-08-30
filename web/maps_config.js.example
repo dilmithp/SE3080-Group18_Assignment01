@@ -1,0 +1,5 @@
+// Copy this file to maps_config.js (gitignored) and fill in a real key.
+// Get one at https://console.cloud.google.com/google/maps-apis/credentials
+// — restrict it to the "Maps JavaScript API" and to this app's HTTP
+// referrers before using it anywhere but local development.
+window.GOOGLE_MAPS_API_KEY = "";

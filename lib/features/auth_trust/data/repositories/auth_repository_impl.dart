@@ -87,4 +87,68 @@ class AuthRepositoryImpl implements AuthRepository {
   Stream<AppUser?> authStateChanges() {
     return _dataSource.authStateChanges().map((dto) => dto?.toEntity());
   }
+
+  @override
+  Future<Either<Failure, void>> sendSignInLinkToEmail(String email) async {
+    try {
+      await _dataSource.sendSignInLinkToEmail(email);
+      return const Right(null);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on PermissionException catch (e) {
+      return Left(PermissionFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, AppUser>> signInWithEmailLink({
+    required String email,
+    required String emailLink,
+  }) async {
+    try {
+      final dto = await _dataSource.signInWithEmailLink(
+        email: email,
+        emailLink: emailLink,
+      );
+      return Right(dto.toEntity());
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on PermissionException catch (e) {
+      return Left(PermissionFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  bool isSignInWithEmailLink(String link) {
+    return _dataSource.isSignInWithEmailLink(link);
+  }
+
+  @override
+  Future<Either<Failure, AppUser>> updateUserRole({
+    required String userId,
+    required UserRole role,
+  }) async {
+    try {
+      final dto = await _dataSource.updateUserRole(userId: userId, role: role);
+      return Right(dto.toEntity());
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on PermissionException catch (e) {
+      return Left(PermissionFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
+  }
 }
