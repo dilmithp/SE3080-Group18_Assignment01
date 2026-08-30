@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elderly_companion/core/config/app_config.dart';
 import 'package:elderly_companion/core/error/exceptions.dart';
 import 'package:elderly_companion/core/services/firestore_service.dart';
+import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
 import 'package:elderly_companion/features/matching/data/models/match_candidate_dto.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/profiles/data/models/user_profile_dto.dart';
@@ -20,8 +21,22 @@ abstract class MatchingRemoteDataSource {
     required double radiusKm,
     required List<String> requiredSkills,
     required List<String> preferredTimes,
+    required String viewerId,
+    required UserRole viewerRole,
     GeoCoordinates? origin,
   });
+}
+
+/// Whether [viewerRole] may see a candidate whose own role is
+/// [candidateRole]: elderly members only see volunteers; volunteers see
+/// both elderly members and other volunteers; admins see everyone.
+bool _canSee({required UserRole viewerRole, required UserRole candidateRole}) {
+  return switch (viewerRole) {
+    UserRole.admin => true,
+    UserRole.volunteer =>
+      candidateRole == UserRole.volunteer || candidateRole == UserRole.elderly,
+    UserRole.elderly => candidateRole == UserRole.volunteer,
+  };
 }
 
 const _earthRadiusKm = 6371.0;
@@ -52,12 +67,23 @@ class FirebaseMatchingRemoteDataSource implements MatchingRemoteDataSource {
     required double radiusKm,
     required List<String> requiredSkills,
     required List<String> preferredTimes,
+    required String viewerId,
+    required UserRole viewerRole,
     GeoCoordinates? origin,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _firestoreService
-          .collection(AppConfig.profilesCollection)
-          .where('locality', isEqualTo: locality);
+      Query<Map<String, dynamic>> query =
+          _firestoreService.collection(AppConfig.profilesCollection);
+      // An exact `locality` string match would silently exclude a
+      // genuinely-nearby candidate whose free-text locality happens to be
+      // spelled or named differently (neighbouring towns, "Colombo" vs
+      // "Colombo 5", etc). Once a real origin coordinate is available, the
+      // Haversine + radiusKm filter below is the correct, more forgiving
+      // way to bound the search — the locality string is only needed as a
+      // fallback when there is no coordinate to search from at all.
+      if (origin == null) {
+        query = query.where('locality', isEqualTo: locality);
+      }
       if (requiredSkills.isNotEmpty) {
         query = query.where('skillsOffered', arrayContainsAny: requiredSkills);
       }
@@ -66,6 +92,19 @@ class FirebaseMatchingRemoteDataSource implements MatchingRemoteDataSource {
 
       final candidates = <MatchCandidateDto>[];
       for (final doc in snapshot.docs) {
+        if (doc.id == viewerId) continue;
+
+        final candidateRoleName = await _firestoreService.getDocument<String>(
+          collectionPath: AppConfig.usersCollection,
+          docId: doc.id,
+          fromJson: (data) => data['role'] as String,
+        );
+        if (candidateRoleName == null) continue;
+        final candidateRole = UserRole.values.byName(candidateRoleName);
+        if (!_canSee(viewerRole: viewerRole, candidateRole: candidateRole)) {
+          continue;
+        }
+
         final data = doc.data();
         final geoPoint = data['geoPoint'] as GeoPoint;
         final profileDto = UserProfileDto(

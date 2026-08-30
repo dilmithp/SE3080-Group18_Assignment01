@@ -1,3 +1,4 @@
+import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_criteria.dart';
 import 'package:elderly_companion/features/matching/domain/strategies/matching_strategy.dart';
@@ -47,6 +48,8 @@ const criteria = MatchCriteria(
   radiusKm: 10,
   requiredSkills: ['gardening'],
   preferredTimes: [],
+  viewerId: 'viewer-1',
+  viewerRole: UserRole.elderly,
 );
 
 void main() {

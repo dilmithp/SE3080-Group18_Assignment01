@@ -26,6 +26,8 @@ class MatchingRepositoryImpl implements MatchingRepository {
         requiredSkills: criteria.requiredSkills,
         preferredTimes: criteria.preferredTimes,
         origin: criteria.origin,
+        viewerId: criteria.viewerId,
+        viewerRole: criteria.viewerRole,
       );
       return Right(dtos.map((d) => d.toEntity()).toList());
     } on NetworkException catch (e) {

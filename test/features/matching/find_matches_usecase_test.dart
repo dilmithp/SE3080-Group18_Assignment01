@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:elderly_companion/core/error/failures.dart';
+import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_criteria.dart';
 import 'package:elderly_companion/features/matching/domain/repositories/matching_repository.dart';
@@ -55,6 +56,8 @@ void main() {
     radiusKm: 10,
     requiredSkills: ['gardening'],
     preferredTimes: [],
+    viewerId: 'viewer-1',
+    viewerRole: UserRole.elderly,
     origin: GeoCoordinates(latitude: 6.9271, longitude: 79.8612),
   );
 
