@@ -18,6 +18,7 @@ import 'package:elderly_companion/features/profiles/domain/entities/availability
 import 'package:elderly_companion/features/profiles/domain/entities/geo_coordinates.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
+import 'package:elderly_companion/features/profiles/presentation/widgets/location_picker.dart';
 
 const _weekdays = [
   'Monday',
@@ -104,6 +105,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
   late final TextEditingController _emergencyContactNameController;
   late final TextEditingController _emergencyContactPhoneController;
   late List<AvailabilityWindow> _availabilityWindows;
+  late GeoCoordinates _geoPoint;
 
   String? _photoUrl;
   bool _isSaving = false;
@@ -143,6 +145,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     _emergencyContactPhoneController =
         TextEditingController(text: base.emergencyContactPhone ?? '');
     _availabilityWindows = List.of(base.availabilityWindows);
+    _geoPoint = base.geoPoint;
     _photoUrl = base.photoUrl;
   }
 
@@ -304,6 +307,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
         displayName: _nameController.text.trim(),
         bio: _bioController.text.trim(),
         locality: _localityController.text.trim(),
+        geoPoint: _geoPoint,
         skillsOffered: _parseTags(_skillsController.text),
         helpNeeded: _parseTags(_helpController.text),
         availabilityWindows: _availabilityWindows,
@@ -414,7 +418,12 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
                     prefixIcon: Icons.place_outlined,
                     textInputAction: TextInputAction.next,
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.lg),
+                  LocationPicker(
+                    initial: _geoPoint,
+                    onChanged: (coords) => setState(() => _geoPoint = coords),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
                   AppTextField(
                     label: 'About you',
                     controller: _bioController,

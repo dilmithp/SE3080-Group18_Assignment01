@@ -47,6 +47,13 @@ dependencies:
   # Dialing an emergency contact from the safety card
   url_launcher: ^6.3.1
 
+  # Interactive map for picking a profile's home location (web-only for now
+  # — see LocationPicker doc comment for the native Android/iOS gap)
+  google_maps_flutter: ^2.9.0
+
+  # Device geolocation ("use my current location") for the location picker
+  geolocator: ^13.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
