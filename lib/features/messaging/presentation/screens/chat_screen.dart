@@ -22,10 +22,16 @@ import 'package:elderly_companion/features/profiles/presentation/providers/profi
 /// arriving via the go_router `extra` payload — see this feature's
 /// integration report for the exact `GoRoute` shape expected.
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({required this.conversationId, required this.otherUserId, super.key});
+  const ChatScreen({required this.conversationId, this.otherUserId, super.key});
 
   final String conversationId;
-  final String otherUserId;
+
+  /// Nullable: arrives via the go_router `extra` payload, which does not
+  /// survive a browser refresh or a direct/bookmarked navigation to
+  /// `/chat/:conversationId` on web — `extra` is an in-memory value only,
+  /// never encoded into the URL. Falling back to a generic title below
+  /// keeps that case a normal chat screen instead of a crash.
+  final String? otherUserId;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -84,7 +90,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentUserId = ref.watch(authStateProvider).valueOrNull?.id;
-    final otherProfile = ref.watch(profileProvider(widget.otherUserId)).valueOrNull;
+    final otherUserId = widget.otherUserId;
+    final otherProfile =
+        otherUserId == null ? null : ref.watch(profileProvider(otherUserId)).valueOrNull;
     final messagesAsync = ref.watch(messagesProvider(widget.conversationId));
     final title = otherProfile?.displayName.isNotEmpty == true
         ? otherProfile!.displayName

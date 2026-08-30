@@ -232,7 +232,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           state,
           ChatScreen(
             conversationId: state.pathParameters['conversationId']!,
-            otherUserId: state.extra as String,
+            otherUserId: state.extra as String?,
           ),
         ),
       ),
