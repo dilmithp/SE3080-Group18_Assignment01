@@ -178,9 +178,10 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
 
     setState(() => _isUploadingPhoto = true);
     try {
+      final bytes = await picked.readAsBytes();
       final result = await ref.read(profileRepositoryProvider).uploadProfilePhoto(
             userId: widget.userId,
-            filePath: picked.path,
+            bytes: bytes,
           );
       result.fold(
         (failure) => messenger

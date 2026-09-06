@@ -1,0 +1,52 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function under5MB() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // verification_documents/{userId}/{fileName} — identity documents
+    // submitted via VerificationScreen. Only the owner can upload their
+    // own; only the owner or an admin can read (mirrors the
+    // verification_requests Firestore rule).
+    match /verification_documents/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && isImage() && under5MB();
+      allow delete: if false;
+    }
+
+    // profile_photos/{userId} — profile picture uploaded via
+    // EditProfileScreen. Readable by any signed-in user (shown on
+    // profile/match cards, same as the Firestore profiles/{userId} rule);
+    // only the owner can upload their own.
+    match /profile_photos/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) && isImage() && under5MB();
+      allow delete: if false;
+    }
+
+    // Everything else stays denied by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

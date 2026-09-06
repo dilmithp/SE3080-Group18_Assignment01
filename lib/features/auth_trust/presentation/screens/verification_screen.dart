@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,9 +38,10 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
     try {
       final storagePath =
           '${AppConfig.verificationDocsPath}/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final bytes = await picked.readAsBytes();
       final documentUrl = await ref.read(storageServiceProvider).uploadFile(
             storagePath: storagePath,
-            file: File(picked.path),
+            bytes: bytes,
           );
 
       final useCase = ref.read(submitVerificationRequestUseCaseProvider);

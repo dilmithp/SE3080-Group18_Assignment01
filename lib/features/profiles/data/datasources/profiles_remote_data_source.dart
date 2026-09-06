@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -21,7 +21,7 @@ abstract class ProfilesRemoteDataSource {
 
   Future<String> uploadProfilePhoto({
     required String userId,
-    required String filePath,
+    required Uint8List bytes,
   });
 }
 
@@ -125,12 +125,12 @@ class FirebaseProfilesRemoteDataSource implements ProfilesRemoteDataSource {
   @override
   Future<String> uploadProfilePhoto({
     required String userId,
-    required String filePath,
+    required Uint8List bytes,
   }) async {
     try {
       final url = await _storageService.uploadFile(
         storagePath: '${AppConfig.profilePhotosPath}/$userId',
-        file: File(filePath),
+        bytes: bytes,
       );
       await _firestoreService.setDocument(
         collectionPath: AppConfig.profilesCollection,
