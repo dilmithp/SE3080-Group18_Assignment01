@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dartz/dartz.dart';
 
 import 'package:elderly_companion/core/error/failures.dart';
@@ -18,10 +20,12 @@ abstract class ProfileRepository {
 
   Future<Either<Failure, UserProfile>> updateProfile(UserProfile profile);
 
-  /// Uploads the file at [filePath] as the profile photo for [userId] and
-  /// returns its public download URL.
+  /// Uploads [bytes] as the profile photo for [userId] and returns its
+  /// public download URL. Callers should read bytes via
+  /// `XFile.readAsBytes()` (works on every platform, unlike constructing a
+  /// `dart:io.File` from `XFile.path`, which throws on web).
   Future<Either<Failure, String>> uploadProfilePhoto({
     required String userId,
-    required String filePath,
+    required Uint8List bytes,
   });
 }

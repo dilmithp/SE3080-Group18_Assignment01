@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dartz/dartz.dart';
 
 import 'package:elderly_companion/core/error/exceptions.dart';
@@ -60,12 +62,12 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, String>> uploadProfilePhoto({
     required String userId,
-    required String filePath,
+    required Uint8List bytes,
   }) async {
     try {
       final url = await _dataSource.uploadProfilePhoto(
         userId: userId,
-        filePath: filePath,
+        bytes: bytes,
       );
       return Right(url);
     } on NotFoundException catch (e) {
