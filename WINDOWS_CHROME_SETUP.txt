@@ -1,0 +1,126 @@
+Elderly Companion (CareConnect) — Fresh Clone Setup on Windows, running in Chrome
+==================================================================================
+Run these in PowerShell, in order. Skip a numbered section only if the note
+under it says you can.
+
+
+1. ONE-TIME TOOLS (skip anything already installed)
+-----------------------------------------------------
+# Git for Windows
+winget install --id Git.Git -e --source winget
+
+# Flutter SDK (includes Dart) — installs to C:\flutter by default via this method;
+# any location works as long as you add its bin\ folder to PATH afterwards
+winget install --id=Flutter.Flutter -e
+
+# Restart PowerShell after installing so PATH changes take effect, then verify:
+flutter --version
+flutter doctor
+
+# Google Chrome, if not already installed
+winget install --id Google.Chrome -e
+
+# Node.js — only needed if you'll touch the Cloud Functions in functions/, not
+# required just to run the Flutter app in Chrome
+winget install --id OpenJS.NodeJS.LTS -e
+
+
+2. CLONE THE REPO
+-----------------------------------------------------
+git clone https://github.com/dilmithp/SE3080-Group18_Assignment01.git
+cd SE3080-Group18_Assignment01
+
+# If you were given a zip instead of a git URL, just extract it and `cd` into
+# the extracted folder instead of the clone step above.
+
+
+3. INSTALL DART/FLUTTER DEPENDENCIES
+-----------------------------------------------------
+flutter pub get
+
+# Make sure web support is on (it is by default on modern Flutter, this is
+# just a safety check — harmless to run even if already enabled)
+flutter config --enable-web
+
+
+4. GENERATE CODE (freezed / json_serializable — gitignored, must regenerate)
+-----------------------------------------------------
+dart run build_runner build --delete-conflicting-outputs
+
+# Re-run this any time you pull changes that touch a file with @freezed on it.
+
+
+5. FIREBASE CONFIG (gitignored — a fresh clone does NOT have this file)
+-----------------------------------------------------
+# The app will still launch and show the UI without this step (main.dart
+# swallows the Firebase init failure), but sign-in, matching, messaging, etc.
+# will not work until it's done. Two ways to get it — pick ONE:
+
+# Option A — fastest: copy the file from a teammate who already has it
+#   Ask Dilmith/a teammate for: lib\core\config\firebase_options.dart
+#   Drop it into this repo at exactly that path. Done — skip to step 6.
+
+# Option B — generate it yourself (needs a Google account added as a
+# member on the "se3080-group18-elderly" Firebase project first — ask
+# Dilmith to add your email under Firebase Console > Project settings >
+# Users and permissions if you don't have access):
+npm install -g firebase-tools
+firebase login
+dart pub global activate flutterfire_cli
+
+# Make sure the pub global bin folder is on PATH (winget's Flutter install
+# usually handles this, but if `flutterfire` is "not recognized" after the
+# line above, add this folder to PATH and restart PowerShell):
+#   %APPDATA%\Pub\Cache\bin
+
+flutterfire configure
+# When prompted: select project "se3080-group18-elderly", then select at
+# least the "web" platform (add android/ios too if you plan to run those).
+# This writes lib\core\config\firebase_options.dart for you.
+
+
+6. GOOGLE MAPS API KEY (gitignored — needed for the location picker / map features)
+-----------------------------------------------------
+copy web\maps_config.js.example web\maps_config.js
+
+# Then open web\maps_config.js in any editor and set the key to:
+#   window.GOOGLE_MAPS_API_KEY = "AIzaSyD47bqVOosy1ZduND5o7Kwej7TABLnmYMA";
+#
+# (Ask Dilmith first if this key has since been rotated/restricted — Maps
+# features just won't load if it's wrong, nothing else breaks.)
+
+
+7. VERIFY (optional but recommended before a demo)
+-----------------------------------------------------
+flutter analyze
+flutter test
+
+
+8. RUN IN CHROME
+-----------------------------------------------------
+flutter run -d chrome
+
+# If Chrome isn't auto-detected, list available devices first:
+#   flutter devices
+# then run with the exact device id it shows for Chrome, e.g.:
+#   flutter run -d chrome-id-shown-here
+
+# Hot reload: press "r" in the terminal while it's running.
+# Hot restart (use this if something looks stale, e.g. after a data-source
+# change that hot reload didn't pick up): press capital "R".
+# Quit: press "q".
+
+
+TROUBLESHOOTING
+-----------------------------------------------------
+- "flutter: command not found" / "not recognized" — PATH wasn't updated or
+  PowerShell wasn't restarted after install. Close and reopen PowerShell.
+- "flutterfire: command not recognized" — see the PATH note in step 5.
+- Blank/white screen in Chrome with console errors mentioning Firestore or
+  Auth — step 5 (firebase_options.dart) wasn't done or is for the wrong
+  project.
+- Map doesn't load / console warns "Google Maps API key not configured" —
+  step 6 wasn't done, or web\maps_config.js wasn't saved before running.
+- `flutter doctor` shows Windows toolchain issues unrelated to Chrome/web —
+  safe to ignore for this project; only the "Chrome - develop for the web"
+  line under `flutter doctor` needs to be green.
