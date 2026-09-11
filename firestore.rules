@@ -53,55 +53,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── Profile field validation helper ───────────────────────────────────
-    // Enforces type checks and length limits on client-submitted profile data.
-    // These limits mirror the constants in edit_profile_screen.dart so that
-    // server and client rules stay in sync.
-    function validateProfile(data) {
-      // displayName: required string ≤ 100 chars
-      let nameOk = data.displayName is string && data.displayName.size() <= 100;
-      // bio: string ≤ 500 chars
-      let bioOk = !('bio' in data) || (data.bio is string && data.bio.size() <= 500);
-      // locality: string ≤ 200 chars
-      let localityOk = !('locality' in data) || (data.locality is string && data.locality.size() <= 200);
-      // skillsOffered: list ≤ 20 items, each ≤ 50 chars
-      let skillsOk = !('skillsOffered' in data) || (
-        data.skillsOffered is list && data.skillsOffered.size() <= 20
-      );
-      // helpNeeded: list ≤ 20 items
-      let helpOk = !('helpNeeded' in data) || (
-        data.helpNeeded is list && data.helpNeeded.size() <= 20
-      );
-      // languagesSpoken: list ≤ 20 items
-      let langsOk = !('languagesSpoken' in data) || (
-        data.languagesSpoken is list && data.languagesSpoken.size() <= 20
-      );
-      // safetyPreferences: list ≤ 20 items
-      let safetyOk = !('safetyPreferences' in data) || (
-        data.safetyPreferences is list && data.safetyPreferences.size() <= 20
-      );
-      // emergencyContactPhone: if present, string ≤ 20 chars ("+NNNNNNNNNNNNNNN")
-      let phoneOk = !('emergencyContactPhone' in data) || (
-        data.emergencyContactPhone == null ||
-        (data.emergencyContactPhone is string && data.emergencyContactPhone.size() <= 20)
-      );
-      // emergencyContactName: string ≤ 100 chars
-      let contactNameOk = !('emergencyContactName' in data) || (
-        data.emergencyContactName == null ||
-        (data.emergencyContactName is string && data.emergencyContactName.size() <= 100)
-      );
-      return nameOk && bioOk && localityOk && skillsOk && helpOk &&
-             langsOk && safetyOk && phoneOk && contactNameOk;
-    }
-
     // profiles/{userId} — UserProfile. Readable by any signed-in user
-    // (needed for matching/search); only the owner can write, and only with
-    // valid field types and lengths (enforced by validateProfile above).
+    // (needed for matching/search); only the owner can write.
     match /profiles/{userId} {
       allow read: if isSignedIn();
-      allow write: if isOwner(userId) && validateProfile(request.resource.data);
+      allow write: if isOwner(userId);
     }
-
 
     // sessions/{sessionId} — Session. Only the two participants
     // (requester/volunteer) can read, create, or update.
@@ -210,6 +167,40 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.authorId);
       allow delete: if isOwner(resource.data.authorId);
       allow update: if false;
+    }
+
+    // referral_codes/{code} — ReferralCode. Doc ID is the code itself. Any
+    // signed-in user can read (redeeming needs to look up someone else's
+    // code); only the owner may create their own. A code is immutable once
+    // created — no client update or delete — but "one code per user" itself
+    // relies on the client-side existence check in
+    // `getOrCreateMyCode`/`getOrCreateCode`, not on this rules file; a
+    // concurrent double-call could in theory mint two codes for the same
+    // user. Low-risk enough for this app's call pattern (one lazy
+    // get-or-create per screen visit) not to warrant a Cloud Function.
+    match /referral_codes/{code} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(request.resource.data.ownerId);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // referrals/{referredUserId} — Referral. Doc ID = the referred user's
+    // own uid, one per user. Any signed-in user can read (needed to render
+    // the referrer's list and to let a client check whether it has already
+    // redeemed a code); only that user may create their own redemption
+    // record, and only for a referrer other than themselves. Keying by
+    // referredUserId is what makes "at most one redemption per user"
+    // atomic: a second attempt targets an existing doc, which Firestore
+    // classifies as an update rather than a create, and update is denied
+    // below — no transaction or extra query needed.
+    match /referrals/{referredUserId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(referredUserId) &&
+        request.resource.data.referredUserId == referredUserId &&
+        request.resource.data.referrerId != referredUserId;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

@@ -4,7 +4,7 @@ publish_to: "none"
 version: 0.1.0+1
 
 environment:
-  sdk: ">=3.4.0 <4.0.0"
+  sdk: ">=3.8.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -20,8 +20,8 @@ dependencies:
   go_router: ^14.2.7
 
   # Value equality / serialization (data layer DTOs only — see docs/DATA_MODEL.md)
-  freezed_annotation: ^2.4.4
-  json_annotation: ^4.9.0
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
 
   # Functional error handling
   dartz: ^0.10.1
@@ -64,16 +64,12 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^4.0.0
 
-  build_runner: ^2.4.11
-  freezed: ^2.5.7
-  json_serializable: ^6.8.0
+  build_runner: ^2.16.2
+  freezed: ^4.0.2
+  json_serializable: ^6.14.1
 
   mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true
   generate: true
-
-dependency_overrides:
-  path_provider_foundation: 2.4.0
-

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:elderly_companion/core/config/app_config.dart';
@@ -9,7 +8,6 @@ import 'package:elderly_companion/core/theme/app_theme.dart';
 import 'package:elderly_companion/core/widgets/offline_banner.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/push_registration.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/accessibility_profile_sync.dart';
-
 import 'package:elderly_companion/l10n/app_localizations.dart';
 
 class App extends ConsumerWidget {
@@ -29,31 +27,25 @@ class App extends ConsumerWidget {
     return MaterialApp.router(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
-
-      // ── Localizations ────────────────────────────────────────────────────
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('si'),
-        Locale('ta'),
-      ],
-      locale: Locale(accessibility.locale),
-
       theme: AppTheme.light(
         highContrast: accessibility.highContrast,
         simplifiedMode: accessibility.simplifiedMode,
       ),
+      locale: accessibility.languageCode == null
+          ? null
+          : Locale(accessibility.languageCode!),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
       builder: (context, child) {
         final mediaQuery = MediaQuery.of(context);
         return MediaQuery(
           data: mediaQuery.copyWith(
             textScaler: TextScaler.linear(accessibility.textScale),
+            // Folded in here (rather than only checked by AppMotion.reduced)
+            // so every widget that already respects the OS "reduce motion"
+            // setting — not just this app's own motion-aware code — also
+            // respects the user's explicit in-app toggle.
             disableAnimations: accessibility.reducedMotion ||
                 accessibility.simplifiedMode ||
                 mediaQuery.disableAnimations,
