@@ -14,7 +14,7 @@ part 'app_notification_dto.g.dart';
 /// notifications_remote_data_source.dart), the same split
 /// scheduling_remote_data_source.dart uses.
 @freezed
-class AppNotificationDto with _$AppNotificationDto {
+abstract class AppNotificationDto with _$AppNotificationDto {
   const AppNotificationDto._();
 
   const factory AppNotificationDto({

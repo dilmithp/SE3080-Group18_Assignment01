@@ -7,7 +7,7 @@ part 'verification_request_dto.freezed.dart';
 part 'verification_request_dto.g.dart';
 
 @freezed
-class VerificationRequestDto with _$VerificationRequestDto {
+abstract class VerificationRequestDto with _$VerificationRequestDto {
   const VerificationRequestDto._();
 
   const factory VerificationRequestDto({
