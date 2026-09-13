@@ -19,7 +19,7 @@ part 'user_profile_dto.g.dart';
 /// dynamic>` rather than nested DTOs — json_serializable handles those
 /// natively with zero extra codegen classes, which keeps this low-risk.
 @freezed
-class UserProfileDto with _$UserProfileDto {
+abstract class UserProfileDto with _$UserProfileDto {
   const UserProfileDto._();
 
   const factory UserProfileDto({
@@ -40,7 +40,6 @@ class UserProfileDto with _$UserProfileDto {
     @Default(<String>[]) List<String> safetyPreferences,
   }) = _UserProfileDto;
 
-  // Converts database JSON to DTO
   factory UserProfileDto.fromJson(Map<String, dynamic> json) =>
       _$UserProfileDtoFromJson(json);
 
@@ -75,9 +74,6 @@ class UserProfileDto with _$UserProfileDto {
         languagesSpoken: entity.languagesSpoken,
         safetyPreferences: entity.safetyPreferences,
       );
-
-      //  // Bridges DTO to Domain Entity
-
 
   UserProfile toEntity() => UserProfile(
         userId: userId,

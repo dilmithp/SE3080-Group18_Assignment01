@@ -15,6 +15,9 @@ class RouteNames {
   static const String verification = '/verification';
   static const String adminVerificationQueue = '/admin/verification';
 
+  // sos
+  static const String adminSosAlerts = '/admin/sos-alerts';
+
   // profiles
   static const String profile = '/profile';
   static const String editProfile = '/profile/edit';
@@ -29,6 +32,9 @@ class RouteNames {
 
   // community
   static const String community = '/community';
+
+  // referrals
+  static const String referrals = '/referrals';
 
   // matching
   static const String matching = '/matching';

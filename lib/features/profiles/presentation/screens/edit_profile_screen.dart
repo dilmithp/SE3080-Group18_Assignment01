@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:elderly_companion/core/services/tts_provider.dart';
-import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/utils/validators.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
@@ -22,6 +20,7 @@ import 'package:elderly_companion/features/profiles/domain/entities/safety_prefe
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/profiles/presentation/widgets/location_picker.dart';
+import 'package:elderly_companion/l10n/app_localizations.dart';
 
 const _weekdays = [
   'Monday',
@@ -32,21 +31,6 @@ const _weekdays = [
   'Saturday',
   'Sunday',
 ];
-
-/// Bio max length in characters; also enforced in firestore.rules.
-const _bioMaxLength = 500;
-
-/// Max length for display name and emergency contact name.
-const _nameMaxLength = 100;
-
-/// Max length for locality string.
-const _localityMaxLength = 200;
-
-/// Max characters per tag; also checked in firestore.rules.
-const _tagMaxLength = 50;
-
-/// Max number of tags per tag field; also checked in firestore.rules.
-const _tagMaxCount = 20;
 
 String _formatTimeOfDay(TimeOfDay time) =>
     '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
@@ -64,12 +48,10 @@ class EditProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit profile'),
-        // Let TalkBack/VoiceOver announce the edit profile screen.
-      ),
+      appBar: AppBar(title: Text(loc.editProfileTitle)),
       body: authState.when(
         loading: () => const LoadingView(),
         error: (error, _) => ErrorView(message: error.toString()),
@@ -195,27 +177,13 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
       .where((tag) => tag.isNotEmpty)
       .toList();
 
-  /// Speak a prompt via TTS when voice-guided prompts are enabled.
-  void _speak(String text) {
-    final accessibility = ref.read(accessibilityControllerProvider);
-    ref.read(ttsServiceProvider).speak(
-      text,
-      voiceGuidedEnabled: accessibility.voiceGuidedPrompts,
-    );
-  }
-
   Future<void> _changePhoto() async {
     final messenger = ScaffoldMessenger.of(context);
-    final accessibility = ref.read(accessibilityControllerProvider);
-    // Data saver: use lower quality & smaller max dimensions.
-    final quality = accessibility.dataSaver ? 50 : 85;
-    final maxDim = accessibility.dataSaver ? 512 : 1024;
-
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      imageQuality: quality,
-      maxWidth: maxDim.toDouble(),
-      maxHeight: maxDim.toDouble(),
+      imageQuality: 85,
+      maxWidth: 1024,
+      maxHeight: 1024,
     );
     if (picked == null) return;
 
@@ -239,6 +207,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
 
   Future<void> _addAvailabilityWindow() async {
     final messenger = ScaffoldMessenger.of(context);
+    final loc = AppLocalizations.of(context)!;
     var selectedDay = _weekdays.first;
     var startTime = const TimeOfDay(hour: 9, minute: 0);
     var endTime = const TimeOfDay(hour: 12, minute: 0);
@@ -258,58 +227,47 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Add availability', style: Theme.of(sheetContext).textTheme.headlineMedium),
+              Text(loc.editProfileAddAvailability, style: Theme.of(sheetContext).textTheme.headlineMedium),
               const SizedBox(height: AppSpacing.lg),
-              Semantics(
-                label: 'Day of week picker',
-                child: DropdownButtonFormField<String>(
-                  initialValue: selectedDay,
-                  decoration: const InputDecoration(labelText: 'Day'),
-                  items: [
-                    for (final day in _weekdays)
-                      DropdownMenuItem(value: day, child: Text(day)),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) setSheetState(() => selectedDay = value);
-                  },
-                ),
+              DropdownButtonFormField<String>(
+                initialValue: selectedDay,
+                decoration: const InputDecoration(labelText: 'Day'),
+                items: [
+                  for (final day in _weekdays)
+                    DropdownMenuItem(value: day, child: Text(day)),
+                ],
+                onChanged: (value) {
+                  if (value != null) setSheetState(() => selectedDay = value);
+                },
               ),
               const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(
-                    child: Semantics(
-                      label: 'From time: ${startTime.format(sheetContext)}',
-                      button: true,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final picked = await showTimePicker(
-                            context: sheetContext,
-                            initialTime: startTime,
-                          );
-                          if (picked != null) setSheetState(() => startTime = picked);
-                        },
-                        icon: const Icon(Icons.access_time),
-                        label: Text('From ${startTime.format(sheetContext)}'),
-                      ),
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                          context: sheetContext,
+                          initialTime: startTime,
+                        );
+                        if (picked != null) setSheetState(() => startTime = picked);
+                      },
+                      icon: const Icon(Icons.access_time),
+                      label: Text('From ${startTime.format(sheetContext)}'),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: Semantics(
-                      label: 'To time: ${endTime.format(sheetContext)}',
-                      button: true,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final picked = await showTimePicker(
-                            context: sheetContext,
-                            initialTime: endTime,
-                          );
-                          if (picked != null) setSheetState(() => endTime = picked);
-                        },
-                        icon: const Icon(Icons.access_time),
-                        label: Text('To ${endTime.format(sheetContext)}'),
-                      ),
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                          context: sheetContext,
+                          initialTime: endTime,
+                        );
+                        if (picked != null) setSheetState(() => endTime = picked);
+                      },
+                      icon: const Icon(Icons.access_time),
+                      label: Text('To ${endTime.format(sheetContext)}'),
                     ),
                   ),
                 ],
@@ -347,35 +305,16 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     );
 
     if (added ?? false) {
-      _speak('Availability added.');
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Availability added.')));
+        ..showSnackBar(SnackBar(content: Text(loc.availabilityAdded)));
     }
-  }
-
-  /// Removes the availability window at [index] and shows an Undo snackbar.
-  void _removeAvailabilityWindow(int index) {
-    final removed = _availabilityWindows[index];
-    setState(() => _availabilityWindows.removeAt(index));
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Availability window removed: ${removed.dayOfWeek} '
-          '${removed.startTime}–${removed.endTime}',
-        ),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () => setState(() => _availabilityWindows.insert(index, removed)),
-        ),
-      ),
-    );
   }
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final messenger = ScaffoldMessenger.of(context);
+    final loc = AppLocalizations.of(context)!;
     setState(() => _isSaving = true);
     try {
       final updated = _base.copyWith(
@@ -438,15 +377,9 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(failure.message))),
         (_) {
-          _speak('Profile saved.');
           messenger
             ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(
-                content: Text('✓ Profile saved.'),
-                duration: Duration(seconds: 3),
-              ),
-            );
+            ..showSnackBar(SnackBar(content: Text(loc.editProfileSaved)));
           if (context.canPop()) context.pop();
         },
       );
@@ -457,7 +390,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
 
   @override
   Widget build(BuildContext context) {
-    final accessibility = ref.watch(accessibilityControllerProvider);
+    final loc = AppLocalizations.of(context)!;
 
     return SafeArea(
       child: Center(
@@ -470,224 +403,149 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ── Profile photo ──────────────────────────────────────
                   Center(
                     child: Column(
                       children: [
-                        Semantics(
-                          label: _photoUrl == null || _photoUrl!.isEmpty
-                              ? 'Profile photo: not set'
-                              : 'Profile photo',
-                          image: true,
-                          child: _photoUrl == null || _photoUrl!.isEmpty
-                              ? const AppStatusIcon(icon: Icons.person, size: 96)
-                              : CircleAvatar(
-                                  radius: 48,
-                                  backgroundImage: NetworkImage(_photoUrl!),
-                                ),
-                        ),
+                        _photoUrl == null || _photoUrl!.isEmpty
+                            ? const AppStatusIcon(icon: Icons.person, size: 96)
+                            : CircleAvatar(
+                                radius: 48,
+                                backgroundImage: NetworkImage(_photoUrl!),
+                              ),
                         const SizedBox(height: AppSpacing.sm),
-                        Semantics(
-                          label: 'Change profile photo button',
-                          button: true,
-                          child: AppButton(
-                            label: 'Change photo',
-                            icon: Icons.camera_alt_outlined,
-                            secondary: true,
-                            isLoading: _isUploadingPhoto,
-                            onPressed: _changePhoto,
-                          ),
+                        AppButton(
+                          label: 'Change photo',
+                          icon: Icons.camera_alt_outlined,
+                          secondary: true,
+                          isLoading: _isUploadingPhoto,
+                          onPressed: _changePhoto,
                         ),
-                        if (accessibility.dataSaver)
-                          Padding(
-                            padding: const EdgeInsets.only(top: AppSpacing.xs),
-                            child: Text(
-                              'Data saver: photo compressed to save data.',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
                       ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-
-                  // ── Display name ──────────────────────────────────────
                   AppTextField(
-                    label: 'Display name',
+                    label: loc.editProfileDisplayName,
                     controller: _nameController,
                     prefixIcon: Icons.badge_outlined,
                     textInputAction: TextInputAction.next,
-                    validator: (value) =>
-                        Validators.required(value, fieldName: 'Name') ??
-                        Validators.maxLength(value, _nameMaxLength, fieldName: 'Name'),
+                    validator: (value) => Validators.required(value, fieldName: 'Name'),
                   ),
                   const SizedBox(height: AppSpacing.md),
-
-                  // ── Locality ──────────────────────────────────────────
                   AppTextField(
-                    label: 'Locality',
-                    hint: 'Your neighbourhood',
+                    label: loc.editProfileLocality,
+                    hint: loc.editProfileLocalityHint,
                     controller: _localityController,
                     prefixIcon: Icons.place_outlined,
                     textInputAction: TextInputAction.next,
-                    validator: (value) =>
-                        Validators.maxLength(value, _localityMaxLength, fieldName: 'Locality'),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-
-                  // ── Map location picker ───────────────────────────────
-                  Semantics(
-                    label: 'Location picker. Tap the map or use the current location button.',
-                    child: LocationPicker(
-                      initial: _geoPoint,
-                      onChanged: (coords) => setState(() => _geoPoint = coords),
-                    ),
+                  LocationPicker(
+                    initial: _geoPoint,
+                    onChanged: (coords) => setState(() => _geoPoint = coords),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-
-                  // ── Bio ───────────────────────────────────────────────
                   AppTextField(
-                    label: 'About you',
+                    label: loc.editProfileBio,
                     controller: _bioController,
                     maxLines: 4,
-                    validator: (value) =>
-                        Validators.maxLength(value, _bioMaxLength, fieldName: 'Bio'),
+                    validator: (value) => Validators.maxLength(
+                      value,
+                      1000,
+                      fieldName: 'Bio',
+                      message: (max) => loc.editProfileBioMaxLength(max),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-
-                  // ── Skills ────────────────────────────────────────────
                   AppTextField(
-                    label: 'Skills you offer',
-                    hint: 'e.g. gardening, cooking, tech help',
+                    label: loc.editProfileSkills,
+                    hint: loc.editProfileSkillsHint,
                     helperText: 'Separate with commas',
                     controller: _skillsController,
                     validator: (value) => Validators.tagList(
                       value,
-                      maxCount: _tagMaxCount,
-                      maxTagLength: _tagMaxLength,
+                      tooManyMessage: (max) => loc.editProfileTooManyTags(max),
+                      tagTooLongMessage: (max) => loc.editProfileTagTooLong(max),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-
-                  // ── Help needed ───────────────────────────────────────
                   AppTextField(
-                    label: 'Help you need',
-                    hint: 'e.g. grocery runs, company on walks',
+                    label: loc.editProfileHelpNeeded,
+                    hint: loc.editProfileHelpHint,
                     helperText: 'Separate with commas',
                     controller: _helpController,
                     validator: (value) => Validators.tagList(
                       value,
-                      maxCount: _tagMaxCount,
-                      maxTagLength: _tagMaxLength,
+                      tooManyMessage: (max) => loc.editProfileTooManyTags(max),
+                      tagTooLongMessage: (max) => loc.editProfileTagTooLong(max),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-
-                  // ── Languages ─────────────────────────────────────────
                   AppTextField(
-                    label: 'Languages you speak',
-                    hint: 'e.g. English, Sinhala, Tamil',
-                    helperText: 'Helps you find a volunteer who speaks your language',
+                    label: loc.editProfileLanguages,
+                    hint: loc.editProfileLanguagesHint,
+                    helperText: loc.editProfileLanguagesHelper,
                     controller: _languagesController,
                     validator: (value) => Validators.tagList(
                       value,
-                      maxCount: _tagMaxCount,
-                      maxTagLength: _tagMaxLength,
+                      tooManyMessage: (max) => loc.editProfileTooManyTags(max),
+                      tagTooLongMessage: (max) => loc.editProfileTagTooLong(max),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-
-                  // ── Safety preferences ────────────────────────────────
-                  Semantics(
-                    label: 'Safety preferences selection',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Safety preferences',
-                          style: Theme.of(context).textTheme.titleMedium,
+                  Text(
+                    loc.editProfileSafetyPreferences,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      for (final option in safetyPreferenceOptions)
+                        FilterChip(
+                          label: Text(option),
+                          selected: _safetySelection.contains(option),
+                          onSelected: (selected) => setState(() {
+                            if (selected) {
+                              _safetySelection.add(option);
+                            } else {
+                              _safetySelection.remove(option);
+                            }
+                          }),
                         ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          children: [
-                            for (final option in safetyPreferenceOptions)
-                              Semantics(
-                                label: '$option safety preference, '
-                                    '${_safetySelection.contains(option) ? "selected" : "not selected"}',
-                                child: FilterChip(
-                                  label: Text(option),
-                                  selected: _safetySelection.contains(option),
-                                  onSelected: (selected) => setState(() {
-                                    if (selected) {
-                                      _safetySelection.add(option);
-                                    } else {
-                                      _safetySelection.remove(option);
-                                    }
-                                  }),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.md),
-
-                  // ── Communication notes ───────────────────────────────
                   AppTextField(
-                    label: 'Communication notes (optional)',
-                    hint: 'e.g. speaks slowly, prefers texting, hard of '
-                        'hearing on the left',
+                    label: loc.editProfileCommunicationNotes,
+                    hint: loc.editProfileCommunicationNotesHint,
                     helperText: 'Shown to a matched volunteer before a session',
                     controller: _communicationNotesController,
                     maxLines: 3,
                   ),
                   const SizedBox(height: AppSpacing.lg),
-
-                  // ── Emergency contact ─────────────────────────────────
-                  Semantics(
-                    label: 'Emergency contact section',
-                    child: Text(
-                      'Emergency contact',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
+                  Text(loc.editProfileEmergencyContact, style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: AppSpacing.sm),
                   AppTextField(
-                    label: 'Contact name (optional)',
-                    hint: 'e.g. a family member or close friend',
+                    label: loc.editProfileContactName,
+                    hint: loc.editProfileContactNameHint,
                     controller: _emergencyContactNameController,
                     prefixIcon: Icons.badge_outlined,
                     textInputAction: TextInputAction.next,
-                    validator: (value) =>
-                        Validators.maxLength(value, _nameMaxLength, fieldName: 'Contact name'),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AppTextField(
-                    label: 'Contact phone (optional)',
-                    hint: 'e.g. +94 71 234 5678',
+                    label: loc.editProfileContactPhone,
+                    hint: loc.editProfileContactPhoneHint,
                     helperText: 'Shown with a one-tap call button on your profile',
                     controller: _emergencyContactPhoneController,
                     prefixIcon: Icons.call_outlined,
                     keyboardType: TextInputType.phone,
-                    // Validates format but allows blank (optional field).
-                    validator: (value) => Validators.optionalPhone(value),
+                    validator: Validators.optionalPhone,
                   ),
                   const SizedBox(height: AppSpacing.lg),
-
-                  // ── Availability ──────────────────────────────────────
-                  Semantics(
-                    label: 'Availability windows section',
-                    child: Text(
-                      'Availability',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
+                  Text(loc.profileAvailability, style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: AppSpacing.sm),
                   if (_availabilityWindows.isEmpty)
                     Text(
@@ -703,9 +561,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
                           for (var i = 0; i < _availabilityWindows.length; i++)
                             Padding(
                               padding: EdgeInsets.only(
-                                bottom: i == _availabilityWindows.length - 1
-                                    ? 0
-                                    : AppSpacing.sm,
+                                bottom: i == _availabilityWindows.length - 1 ? 0 : AppSpacing.sm,
                               ),
                               child: Row(
                                 children: [
@@ -718,15 +574,11 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
                                       '${_availabilityWindows[i].endTime}',
                                     ),
                                   ),
-                                  Semantics(
-                                    label: 'Remove ${_availabilityWindows[i].dayOfWeek} '
-                                        '${_availabilityWindows[i].startTime}–'
-                                        '${_availabilityWindows[i].endTime} availability window',
-                                    button: true,
-                                    child: IconButton(
-                                      icon: const Icon(Icons.close),
-                                      tooltip: 'Remove availability window',
-                                      onPressed: () => _removeAvailabilityWindow(i),
+                                  IconButton(
+                                    icon: const Icon(Icons.close),
+                                    tooltip: 'Remove',
+                                    onPressed: () => setState(
+                                      () => _availabilityWindows.removeAt(i),
                                     ),
                                   ),
                                 ],
@@ -737,22 +589,16 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
                     ),
                   const SizedBox(height: AppSpacing.sm),
                   AppButton(
-                    label: 'Add availability',
+                    label: loc.editProfileAddAvailability,
                     icon: Icons.add,
                     secondary: true,
                     onPressed: _addAvailabilityWindow,
                   ),
                   const SizedBox(height: AppSpacing.lg),
-
-                  // ── Save ──────────────────────────────────────────────
-                  Semantics(
-                    label: 'Save profile button',
-                    button: true,
-                    child: AppButton(
-                      label: 'Save profile',
-                      isLoading: _isSaving,
-                      onPressed: _save,
-                    ),
+                  AppButton(
+                    label: loc.editProfileSave,
+                    isLoading: _isSaving,
+                    onPressed: _save,
                   ),
                 ],
               ),

@@ -24,10 +24,12 @@ import 'package:elderly_companion/features/notifications/presentation/screens/no
 import 'package:elderly_companion/features/profiles/presentation/screens/accessibility_settings_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/edit_profile_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/profile_screen.dart';
+import 'package:elderly_companion/features/referrals/presentation/screens/referrals_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/scheduling_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_details_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_feedback_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_series_screen.dart';
+import 'package:elderly_companion/features/sos/presentation/screens/active_sos_alerts_screen.dart';
 
 /// Bridges a Riverpod-watched value into a [Listenable] so [GoRouter] can
 /// react to auth-state changes without rebuilding the whole router.
@@ -75,11 +77,9 @@ String? _redirect(Ref ref, GoRouterState state) {
 /// isn't a [ConsumerWidget].
 Page<void> _appPage(BuildContext context, GoRouterState state, Widget child) {
   final container = ProviderScope.containerOf(context, listen: false);
-  final accessibility =
-      container.read(accessibilityControllerProvider);
-  final reduceMotion = accessibility.reducedMotion ||
-      accessibility.simplifiedMode ||
-      MediaQuery.of(context).disableAnimations;
+  final simplified =
+      container.read(accessibilityControllerProvider).simplifiedMode;
+  final reduceMotion = simplified || MediaQuery.of(context).disableAnimations;
 
   if (reduceMotion) {
     return NoTransitionPage(key: state.pageKey, child: child);
@@ -221,6 +221,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             _appPage(context, state, const AdminVerificationQueueScreen()),
       ),
       GoRoute(
+        path: RouteNames.adminSosAlerts,
+        name: 'adminSosAlerts',
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const ActiveSosAlertsScreen()),
+      ),
+      GoRoute(
         path: RouteNames.conversations,
         name: 'conversations',
         pageBuilder: (context, state) =>
@@ -249,6 +255,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'community',
         pageBuilder: (context, state) =>
             _appPage(context, state, const CommunityFeedScreen()),
+      ),
+      GoRoute(
+        path: RouteNames.referrals,
+        name: 'referrals',
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const ReferralsScreen()),
       ),
     ],
   );

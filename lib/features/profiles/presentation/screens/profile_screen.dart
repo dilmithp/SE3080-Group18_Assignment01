@@ -16,6 +16,8 @@ import 'package:elderly_companion/features/profiles/domain/entities/profile_comp
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/profiles/presentation/widgets/emergency_contact_card.dart';
+import 'package:elderly_companion/features/sos/presentation/widgets/sos_button.dart';
+import 'package:elderly_companion/l10n/app_localizations.dart';
 
 /// Owner: Perera (features/profiles). Shows the signed-in user's own
 /// profile, or invites them to create one if [profileProvider] has nothing
@@ -26,19 +28,16 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(loc.profileTitle),
         actions: [
-          Semantics(
-            label: 'Edit profile',
-            button: true,
-            child: IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Edit profile',
-              onPressed: () => context.push(RouteNames.editProfile),
-            ),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: loc.profileEditTooltip,
+            onPressed: () => context.push(RouteNames.editProfile),
           ),
         ],
       ),
@@ -68,6 +67,7 @@ class _ProfileBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider(userId));
+    final loc = AppLocalizations.of(context)!;
 
     return profileAsync.when(
       loading: () => const LoadingView(),
@@ -76,11 +76,10 @@ class _ProfileBody extends ConsumerWidget {
         if (profile == null) {
           return EmptyView(
             icon: Icons.person_outline,
-            title: 'Your profile is empty',
-            message: 'Add your name, interests and availability so '
-                'companions and helpers can find you.',
+            title: loc.profileEmptyTitle,
+            message: loc.profileEmptyMessage,
             action: AppButton(
-              label: 'Complete profile',
+              label: loc.profileCompleteAction,
               icon: Icons.edit_outlined,
               onPressed: () => context.push(RouteNames.editProfile),
             ),
@@ -100,7 +99,7 @@ class _ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final completeness = ProfileCompleteness.of(profile);
+    final loc = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -117,84 +116,77 @@ class _ProfileView extends StatelessWidget {
                     const SizedBox(height: AppSpacing.sm),
                     _TrustBadge(userId: profile.userId),
                     const SizedBox(height: AppSpacing.sm),
-                    Semantics(
-                      label: profile.displayName.isEmpty
-                          ? 'No name set'
-                          : 'Name: ${profile.displayName}',
-                      child: Text(
-                        profile.displayName.isEmpty
-                            ? 'Add your name'
-                            : profile.displayName,
-                        style: theme.textTheme.headlineMedium,
-                        textAlign: TextAlign.center,
-                      ),
+                    Text(
+                      profile.displayName.isEmpty
+                          ? 'Add your name'
+                          : profile.displayName,
+                      style: theme.textTheme.headlineMedium,
+                      textAlign: TextAlign.center,
                     ),
                     if (profile.locality.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.xs),
-                      Semantics(
-                        label: 'Location: ${profile.locality}',
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.place_outlined,
-                              size: 18,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.place_outlined,
+                            size: 18,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            profile.locality,
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              profile.locality,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ],
                   ],
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              _CompletenessCard(completeness: completeness),
+              _CompletenessCard(
+                completeness: ProfileCompleteness.of(profile),
+              ),
               const SizedBox(height: AppSpacing.md),
               EmergencyContactCard(profile: profile),
               if (profile.emergencyContactName?.trim().isNotEmpty == true ||
                   profile.emergencyContactPhone?.trim().isNotEmpty == true)
                 const SizedBox(height: AppSpacing.md),
+              const SosButton(),
+              const SizedBox(height: AppSpacing.md),
               if (profile.bio.isNotEmpty) ...[
-                Semantics(
-                  label: 'About: ${profile.bio}',
-                  child: AppCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('About', style: theme.textTheme.titleLarge),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(profile.bio, style: theme.textTheme.bodyLarge),
-                      ],
-                    ),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(loc.profileAbout, style: theme.textTheme.titleLarge),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(profile.bio, style: theme.textTheme.bodyLarge),
+                    ],
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.languagesSpoken.isNotEmpty) ...[
-                _TagSection(title: 'Languages', tags: profile.languagesSpoken),
+                _TagSection(title: loc.profileLanguages, tags: profile.languagesSpoken),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.safetyPreferences.isNotEmpty) ...[
                 _TagSection(
-                  title: 'Safety preferences',
+                  title: loc.profileSafetyPreferences,
                   tags: profile.safetyPreferences,
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.skillsOffered.isNotEmpty) ...[
-                _TagSection(title: 'Skills offered', tags: profile.skillsOffered),
+                _TagSection(title: loc.profileSkillsOffered, tags: profile.skillsOffered),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.helpNeeded.isNotEmpty) ...[
-                _TagSection(title: 'Help needed', tags: profile.helpNeeded),
+                _TagSection(title: loc.profileHelpNeeded, tags: profile.helpNeeded),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.availabilityWindows.isNotEmpty) ...[
@@ -202,28 +194,24 @@ class _ProfileView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Availability', style: theme.textTheme.titleLarge),
+                      Text(loc.profileAvailability, style: theme.textTheme.titleLarge),
                       const SizedBox(height: AppSpacing.sm),
                       for (final window in profile.availabilityWindows)
                         Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                          child: Semantics(
-                            label: 'Available on ${window.dayOfWeek} from '
-                                '${window.startTime} to ${window.endTime}',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.schedule_outlined,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: AppSpacing.xs),
-                                Text(
-                                  '${window.dayOfWeek} ${window.startTime}–${window.endTime}',
-                                  style: theme.textTheme.bodyMedium,
-                                ),
-                              ],
-                            ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.schedule_outlined,
+                                size: 18,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: AppSpacing.xs),
+                              Text(
+                                '${window.dayOfWeek} ${window.startTime}–${window.endTime}',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ],
                           ),
                         ),
                     ],
@@ -264,16 +252,12 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
-    return Semantics(
-      label: hasPhoto ? 'Profile photo' : 'Profile photo: not set',
-      image: true,
-      child: hasPhoto
-          ? CircleAvatar(
-              radius: 48,
-              backgroundImage: NetworkImage(photoUrl!),
-            )
-          : const AppStatusIcon(icon: Icons.person, size: 96),
+    if (photoUrl == null || photoUrl!.isEmpty) {
+      return const AppStatusIcon(icon: Icons.person, size: 96);
+    }
+    return CircleAvatar(
+      radius: 48,
+      backgroundImage: NetworkImage(photoUrl!),
     );
   }
 }
@@ -286,88 +270,77 @@ class _CompletenessCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
 
     if (completeness.isComplete) {
-      return Semantics(
-        label: 'Profile completeness: complete',
-        child: AppCard(
-          child: Row(
-            children: [
-              Icon(Icons.verified_outlined, color: theme.colorScheme.primary),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'Your profile is complete',
-                  style: theme.textTheme.titleMedium,
-                ),
+      return AppCard(
+        child: Row(
+          children: [
+            Icon(Icons.verified_outlined, color: theme.colorScheme.primary),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                loc.profileCompletenessComplete,
+                style: theme.textTheme.titleMedium,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
 
-    return Semantics(
-      label: 'Profile completeness: ${completeness.percent}%. '
-          '${completeness.completedCount} of ${completeness.totalCount} sections complete. '
-          'Missing: ${completeness.missing.take(4).join(", ")}',
-      child: AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Profile ${completeness.percent}% complete',
-                    style: theme.textTheme.titleLarge,
-                  ),
-                ),
-                Text(
-                  '${completeness.completedCount}/${completeness.totalCount}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Semantics(
-              label: 'Progress bar: ${completeness.percent}% complete',
-              value: '${completeness.percent}%',
-              child: LinearProgressIndicator(
-                value: completeness.fraction,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text('Next steps', style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.xs),
-            for (final item in completeness.missing.take(4))
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.radio_button_unchecked,
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(child: Text(item, style: theme.textTheme.bodyMedium)),
-                  ],
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  loc.profileCompletenessPercent(completeness.percent),
+                  style: theme.textTheme.titleLarge,
                 ),
               ),
-            if (completeness.missing.length > 4)
               Text(
-                'and ${completeness.missing.length - 4} more',
-                style: theme.textTheme.bodySmall?.copyWith(
+                '${completeness.completedCount}/${completeness.totalCount}',
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          LinearProgressIndicator(
+            value: completeness.fraction,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(loc.profileNextSteps, style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          for (final item in completeness.missing.take(4))
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.radio_button_unchecked,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(child: Text(item, style: theme.textTheme.bodyMedium)),
+                ],
+              ),
+            ),
+          if (completeness.missing.length > 4)
+            Text(
+              'and ${completeness.missing.length - 4} more',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -383,33 +356,26 @@ class _TagSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Semantics(
-      label: '$title: ${tags.join(", ")}',
-      child: AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: theme.textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                for (final tag in tags)
-                  Semantics(
-                    label: '$tag chip',
-                    child: Chip(
-                      label: Text(tag),
-                      backgroundColor: theme.colorScheme.secondaryContainer,
-                      labelStyle:
-                          TextStyle(color: theme.colorScheme.onSecondaryContainer),
-                      side: BorderSide.none,
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: theme.textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final tag in tags)
+                Chip(
+                  label: Text(tag),
+                  backgroundColor: theme.colorScheme.secondaryContainer,
+                  labelStyle: TextStyle(color: theme.colorScheme.onSecondaryContainer),
+                  side: BorderSide.none,
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
