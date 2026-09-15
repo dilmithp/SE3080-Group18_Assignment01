@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
+import 'package:elderly_companion/l10n/app_localizations.dart';
 
 /// Safety affordance for a signed-in user's own profile: shows whoever they
 /// have listed as an emergency contact, with a large "Call" action that
@@ -40,7 +41,9 @@ class EmergencyContactCard extends StatelessWidget {
     if (!launched && context.mounted) {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Could not start the call.')));
+        ..showSnackBar(
+          const SnackBar(content: Text('Could not start the call.')),
+        );
     }
   }
 
@@ -52,14 +55,14 @@ class EmergencyContactCard extends StatelessWidget {
 
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final loc = AppLocalizations.of(context)!;
 
-    // Build a descriptive label for assistive tech so TalkBack/VoiceOver
-    // announces the full card content rather than individual fragments.
+    // Descriptive label for assistive tech so TalkBack/VoiceOver announces
+    // the full card content rather than individual fragments.
     final cardLabel = [
-      'Emergency contact card.',
+      '${loc.emergencyContact}.',
       if (name != null) 'Contact name: $name.',
       if (phone != null) 'Phone number: $phone.',
-      if (phone != null) 'Double-tap the Call button to dial.',
     ].join(' ');
 
     return Semantics(
@@ -82,9 +85,10 @@ class EmergencyContactCard extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    'Emergency contact',
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(color: scheme.onErrorContainer),
+                    loc.emergencyContact,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: scheme.onErrorContainer,
+                    ),
                   ),
                 ),
               ],
@@ -102,22 +106,25 @@ class EmergencyContactCard extends StatelessWidget {
               SizedBox(height: name != null ? AppSpacing.xs : 0),
               Text(
                 phone,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: scheme.onErrorContainer),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onErrorContainer,
+                ),
               ),
             ],
             if (phone != null) ...[
               const SizedBox(height: AppSpacing.md),
-              // Explicit Semantics label so TalkBack/VoiceOver announces the
-              // button purpose even when the dynamically constructed label
-              // (e.g. "Call Amara") would otherwise be truncated or ignored.
+              // Explicit Semantics so TalkBack/VoiceOver announces the
+              // button's purpose using the live name/phone rather than
+              // whatever AppButton's own default semantics would infer.
               Semantics(
                 label: name != null
                     ? 'Call emergency contact $name at $phone'
                     : 'Call emergency contact at $phone',
                 button: true,
                 child: AppButton(
-                  label: name != null ? 'Call $name' : 'Call emergency contact',
+                  label: name != null
+                      ? loc.callButtonLabel(name)
+                      : loc.callButtonFallback,
                   icon: Icons.call,
                   onPressed: () => _call(context, phone),
                 ),

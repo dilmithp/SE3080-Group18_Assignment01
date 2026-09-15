@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -18,14 +17,25 @@ const _defaultCenter = LatLng(6.9271, 79.8612);
 const double _defaultZoom = 12;
 const double _pickedZoom = 15;
 
-/// Reusable map and geolocation widget for picking a profile's home coordinate.
+/// Reusable map widget for picking a profile's home coordinate.
 ///
-/// On web, renders a fixed-height interactive [GoogleMap].
-/// On mobile (Android APK / iOS), provides a GPS-driven location detection card
-/// with a prominent "Use my current location" button powered by [Geolocator].
+/// Renders a fixed-height [GoogleMap]; tapping it drops/moves a single
+/// [Marker] and reports the tapped point via [onChanged]. A prominent
+/// "Use my current location" button offers a one-tap alternative to tapping
+/// a precise spot on the map — important for this app's elderly users, who
+/// shouldn't have to rely on hitting a tiny pin accurately. A text caption
+/// under the map echoes back the selected coordinate as plain-language
+/// confirmation, and a helper line beneath explains why the app wants this.
 ///
-/// A text caption echoes back the selected coordinate as plain-language
-/// confirmation with full screen-reader [Semantics] support.
+/// Web and Android are wired; iOS is not yet (no `GMSServices.provideAPIKey`
+/// call in `ios/Runner/AppDelegate.swift`). Android's key lives in
+/// `android/app/src/main/AndroidManifest.xml`'s `com.google.android.geo.API_KEY`
+/// meta-data (regenerated locally, gitignored along with the rest of
+/// `android/` — see CLAUDE.md); web's is loaded by
+/// `web/index.html`/`web/maps_config.js`. Both currently reuse the same key
+/// value — if the map renders blank/gray on a given platform instead of
+/// showing tiles, that key's Google Cloud Console restrictions need an
+/// allowance added for that platform.
 class LocationPicker extends StatefulWidget {
   const LocationPicker({
     required this.initial,
@@ -72,7 +82,7 @@ class _LocationPickerState extends State<LocationPicker> {
 
   void _selectPoint(LatLng point, {bool animateCamera = false}) {
     setState(() => _marker = point);
-    if (animateCamera && kIsWeb) {
+    if (animateCamera) {
       _mapController?.animateCamera(CameraUpdate.newLatLngZoom(point, _pickedZoom));
     }
     widget.onChanged(GeoCoordinates(latitude: point.latitude, longitude: point.longitude));
@@ -90,7 +100,8 @@ class _LocationPickerState extends State<LocationPicker> {
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        notify('Location services are turned off. Please enable them in your device settings.');
+        notify('Location services are turned off. Turn them on to use this, '
+            'or tap the map to set your area instead.');
         return;
       }
 
@@ -99,22 +110,21 @@ class _LocationPickerState extends State<LocationPicker> {
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.denied) {
-        notify('Location permission was declined. You can still set your locality above.');
+        notify('Location permission was declined — you can still tap the '
+            'map to set your area.');
         return;
       }
       if (permission == LocationPermission.deniedForever) {
-        notify('Location permission is blocked. Please enable it in your device or browser settings.');
+        notify('Location permission is blocked in your browser settings. '
+            'You can still tap the map to set your area.');
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium,
-        timeLimit: const Duration(seconds: 15),
-      );
+      final position = await Geolocator.getCurrentPosition();
       _selectPoint(LatLng(position.latitude, position.longitude), animateCamera: true);
-      notify('Location updated: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}');
     } catch (_) {
-      notify("Couldn't retrieve current location. Please verify GPS is enabled and try again.");
+      notify("Couldn't get your current location. You can still tap the "
+          'map to set your area.');
     } finally {
       if (mounted) setState(() => _isLocating = false);
     }
@@ -127,110 +137,55 @@ class _LocationPickerState extends State<LocationPicker> {
       color: theme.colorScheme.onSurfaceVariant,
     );
 
-    final statusText = _marker == null
-        ? 'No location pinned yet.'
-        : 'Selected: ${_marker!.latitude.toStringAsFixed(4)}, '
-            '${_marker!.longitude.toStringAsFixed(4)}';
-
-    return Semantics(
-      container: true,
-      label: 'Location picker. Current status: $statusText',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Your location', style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
-          ClipRRect(
-            borderRadius: AppRadius.cardAll,
-            child: SizedBox(
-              height: 220,
-              child: kIsWeb
-                  ? GoogleMap(
-                      initialCameraPosition: CameraPosition(
-                        target: _initialCameraTarget,
-                        zoom: _defaultZoom,
-                      ),
-                      onMapCreated: (controller) => _mapController = controller,
-                      onTap: (point) => _selectPoint(point),
-                      markers: {
-                        if (_marker != null)
-                          Marker(
-                            markerId: const MarkerId('selected-location'),
-                            position: _marker!,
-                          ),
-                      },
-                      myLocationButtonEnabled: false,
-                      zoomControlsEnabled: false,
-                    )
-                  : Container(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: AppRadius.cardAll,
-                        border: Border.all(color: theme.colorScheme.outlineVariant),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _marker != null ? Icons.location_on : Icons.location_searching,
-                              size: 44,
-                              color: _marker != null
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(
-                              _marker != null
-                                  ? 'GPS Pin Set'
-                                  : 'Map view available on Web',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: _marker != null
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _marker != null
-                                  ? '${_marker!.latitude.toStringAsFixed(4)}, ${_marker!.longitude.toStringAsFixed(4)}'
-                                  : 'Tap "Use my current location" below to capture device GPS.',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Your location', style: theme.textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.sm),
+        ClipRRect(
+          borderRadius: AppRadius.cardAll,
+          child: SizedBox(
+            height: 220,
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _initialCameraTarget,
+                zoom: _defaultZoom,
+              ),
+              onMapCreated: (controller) => _mapController = controller,
+              onTap: (point) => _selectPoint(point),
+              markers: {
+                if (_marker != null)
+                  Marker(markerId: const MarkerId('selected-location'), position: _marker!),
+              },
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            kIsWeb && _marker == null
-                ? 'Tap anywhere on the map to set your area, or use the button below.'
-                : statusText,
-            style: subtleStyle,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          _marker == null
+              ? 'Tap anywhere on the map to set your area.'
+              : 'Selected: ${_marker!.latitude.toStringAsFixed(4)}, '
+                  '${_marker!.longitude.toStringAsFixed(4)}',
+          style: subtleStyle,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppButton(
+          label: 'Use my current location',
+          icon: Icons.my_location,
+          isLoading: _isLocating,
+          onPressed: _useCurrentLocation,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'This helps us find companions and volunteers near you — you can '
+          'leave it approximate.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(height: AppSpacing.md),
-          AppButton(
-            label: 'Use my current location',
-            icon: Icons.my_location,
-            isLoading: _isLocating,
-            onPressed: _useCurrentLocation,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'This helps us find companions and volunteers near you — you can leave it approximate.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

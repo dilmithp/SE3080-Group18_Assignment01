@@ -48,21 +48,21 @@ class AppButton extends StatelessWidget {
     );
   }
 
-  /// Explicit minimum tap target (48x48 dp) complying with WCAG 2.5.5 and
-  /// [androidTapTargetGuideline]. A loading button is disabled so it cannot be
-  /// pressed twice, but it preserves resting colors to avoid looking like an error.
-  ButtonStyle _buttonStyle(ColorScheme scheme) {
-    const minTarget = Size(64, kMinInteractiveDimension);
+  /// The minimum tap target itself comes from the ambient theme (48dp
+  /// standard, 64dp in Simplified Mode — see AppTheme.minTapTarget /
+  /// minTapTargetSimplified), not from this widget, so it is deliberately
+  /// not overridden here. A loading button is disabled so it cannot be
+  /// pressed twice, but it must not *look* disabled — greying it out reads
+  /// as "this failed" — so these overrides keep the resting colours while
+  /// the press is blocked.
+  ButtonStyle? _buttonStyle(ColorScheme scheme) {
+    if (!isLoading) return null;
     if (secondary) {
-      return OutlinedButton.styleFrom(
-        minimumSize: minTarget,
-        disabledForegroundColor: isLoading ? scheme.primary : null,
-      );
+      return OutlinedButton.styleFrom(disabledForegroundColor: scheme.primary);
     }
     return ElevatedButton.styleFrom(
-      minimumSize: minTarget,
-      disabledBackgroundColor: isLoading ? scheme.primary : null,
-      disabledForegroundColor: isLoading ? scheme.onPrimary : null,
+      disabledBackgroundColor: scheme.primary,
+      disabledForegroundColor: scheme.onPrimary,
     );
   }
 

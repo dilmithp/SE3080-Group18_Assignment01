@@ -1,17 +1,20 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'package:elderly_companion/core/widgets/connectivity_check_web.dart'
+    if (dart.library.io) 'package:elderly_companion/core/widgets/connectivity_check_io.dart'
+    as connectivity;
+import 'package:elderly_companion/l10n/app_localizations.dart';
 
 /// A slim banner that appears at the very top of the screen whenever the
 /// device loses network connectivity. It disappears automatically when
 /// connectivity is restored.
 ///
-/// Implementation note: we poll connectivity via [InternetAddress.lookup]
-/// because `connectivity_plus` adds a transitive dependency the project hasn't
-/// taken yet. The poll is infrequent (every 5 s) and stops when the widget is
-/// disposed, so the overhead is negligible.
+/// The actual connectivity probe is platform-conditional (see
+/// connectivity_check_io.dart / connectivity_check_web.dart) — `dart:io` is
+/// unavailable when compiling for web, so this file never imports it
+/// directly, even behind a runtime `kIsWeb` guard.
 class OfflineBanner extends StatefulWidget {
   const OfflineBanner({super.key});
 
@@ -37,17 +40,7 @@ class _OfflineBannerState extends State<OfflineBanner> {
   }
 
   Future<void> _check() async {
-    if (kIsWeb) return;
-    bool offline;
-    try {
-      // A lightweight DNS lookup to google.com — succeeds when online, throws
-      // when fully offline.
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 4));
-      offline = result.isEmpty || result.first.rawAddress.isEmpty;
-    } catch (_) {
-      offline = true;
-    }
+    final offline = await connectivity.isOffline();
     if (mounted && offline != _isOffline) {
       setState(() => _isOffline = offline);
     }
@@ -57,8 +50,10 @@ class _OfflineBannerState extends State<OfflineBanner> {
   Widget build(BuildContext context) {
     if (!_isOffline) return const SizedBox.shrink();
 
+    final loc = AppLocalizations.of(context)!;
+
     return Semantics(
-      label: 'Offline banner: You are currently offline',
+      label: 'Offline banner: ${loc.offlineBanner}',
       liveRegion: true,
       child: Material(
         elevation: 0,
@@ -77,7 +72,7 @@ class _OfflineBannerState extends State<OfflineBanner> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'You are offline',
+                  loc.offlineBanner,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onError,
                         fontWeight: FontWeight.w600,

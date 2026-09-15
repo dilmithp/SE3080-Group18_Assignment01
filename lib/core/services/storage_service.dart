@@ -18,12 +18,19 @@ class StorageService {
 
   final FirebaseStorage _storage;
 
+  /// [contentType] must be set — storage.rules' `isImage()` check requires
+  /// an `image/*` content type on every path this app writes to
+  /// (verification_documents, profile_photos), and `putData` without
+  /// explicit metadata defaults to `application/octet-stream`, which that
+  /// rule rejects outright. Pass the picked file's real MIME type where
+  /// available (e.g. `XFile.mimeType`), falling back to 'image/jpeg'.
   Future<String> uploadFile({
     required String storagePath,
     required Uint8List bytes,
+    String contentType = 'image/jpeg',
   }) async {
     final ref = _storage.ref(storagePath);
-    await ref.putData(bytes);
+    await ref.putData(bytes, SettableMetadata(contentType: contentType));
     return ref.getDownloadURL();
   }
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
@@ -206,26 +205,23 @@ class _PostCard extends ConsumerWidget {
   }
 }
 
-class _Avatar extends ConsumerWidget {
+class _Avatar extends StatelessWidget {
   const _Avatar({required this.name, required this.photoUrl});
 
   final String name;
   final String? photoUrl;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final initial = name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
-    final dataSaver = ref.watch(accessibilityControllerProvider).dataSaver;
 
     return CircleAvatar(
       radius: 24,
       backgroundColor: scheme.secondaryContainer,
       foregroundColor: scheme.onSecondaryContainer,
-      backgroundImage: (photoUrl == null || dataSaver) ? null : NetworkImage(photoUrl!),
-      child: (photoUrl == null || dataSaver)
-          ? Text(initial, style: const TextStyle(fontWeight: FontWeight.w700))
-          : null,
+      backgroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
+      child: photoUrl == null ? Text(initial, style: const TextStyle(fontWeight: FontWeight.w700)) : null,
     );
   }
 }

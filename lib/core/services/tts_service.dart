@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
@@ -14,6 +12,11 @@ import 'package:flutter_tts/flutter_tts.dart';
 /// On web, [FlutterTts] uses the browser SpeechSynthesis API; on Android/iOS
 /// it delegates to the native TTS engine. The service is silent on platforms
 /// that don't have a supported engine (e.g. some emulators).
+///
+/// Uses `defaultTargetPlatform` rather than `dart:io`'s `Platform` — the
+/// latter is unavailable when compiling for web and would break that build
+/// target even behind a `kIsWeb` guard, since the import itself fails to
+/// resolve (same class of bug as `dart:io.File` elsewhere in this project).
 class TtsService {
   TtsService() {
     _init();
@@ -24,7 +27,7 @@ class TtsService {
 
   Future<void> _init() async {
     try {
-      if (!kIsWeb && Platform.isAndroid) {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
         await _tts.setSharedInstance(true);
       }
       await _tts.setLanguage('en-US');
