@@ -10,7 +10,7 @@ part 'referral_code_dto.g.dart';
 /// stays plain-JSON — the data source bridges Firestore's `Timestamp` type
 /// at the boundary.
 @freezed
-class ReferralCodeDto with _$ReferralCodeDto {
+abstract class ReferralCodeDto with _$ReferralCodeDto {
   const ReferralCodeDto._();
 
   const factory ReferralCodeDto({

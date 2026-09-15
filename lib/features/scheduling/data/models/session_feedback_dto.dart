@@ -12,7 +12,7 @@ part 'session_feedback_dto.g.dart';
 /// needed); the data source is responsible for bridging Firestore's
 /// `Timestamp` type at the boundary.
 @freezed
-class SessionFeedbackDto with _$SessionFeedbackDto {
+abstract class SessionFeedbackDto with _$SessionFeedbackDto {
   const SessionFeedbackDto._();
 
   const factory SessionFeedbackDto({
