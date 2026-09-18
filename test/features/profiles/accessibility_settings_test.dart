@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:elderly_companion/core/theme/accessibility/accessibility_state.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/accessibility_settings_screen.dart';
+import 'package:elderly_companion/l10n/app_localizations.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,8 @@ void main() {
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: AccessibilitySettingsScreen(),
         ),
       ),

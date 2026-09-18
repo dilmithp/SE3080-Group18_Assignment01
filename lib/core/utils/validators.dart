@@ -3,7 +3,7 @@
 class Validators {
   const Validators._();
 
-  static final RegExp _emailPattern = RegExp(r'^[^\@\s]+@[^\@\s]+\.[^\@\s]+$');
+  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
   static final RegExp _phonePattern = RegExp(r'^\+?[0-9]{7,15}$');
 
   static String? required(String? value, {String fieldName = 'This field'}) {
@@ -33,16 +33,6 @@ class Validators {
     return null;
   }
 
-  /// Like [phone] but accepts a blank/null value (the field is optional).
-  /// Only validates format when a non-empty value is provided.
-  static String? optionalPhone(String? value) {
-    if (value == null || value.trim().isEmpty) return null;
-    if (!_phonePattern.hasMatch(value.trim())) {
-      return 'Enter a valid phone number (e.g. +94 71 234 5678).';
-    }
-    return null;
-  }
-
   static String? password(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password is required.';
@@ -60,13 +50,30 @@ class Validators {
     return null;
   }
 
-  /// Validates that [value] does not exceed [max] characters.
-  /// Returns `null` when the value is blank (the caller is responsible for
-  /// [required] validation if the field is mandatory).
-  static String? maxLength(String? value, int max, {String fieldName = 'This field'}) {
+  /// Like [phone] but accepts a blank/null value (the field is optional).
+  /// Only validates format when a non-empty value is provided.
+  static String? optionalPhone(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    if (!_phonePattern.hasMatch(value.trim())) {
+      return 'Enter a valid phone number (e.g. +94 71 234 5678).';
+    }
+    return null;
+  }
+
+  /// Validates that [value] does not exceed [max] characters. Returns `null`
+  /// when the value is blank — the caller is responsible for [required]
+  /// validation if the field is mandatory. [message] lets a caller with a
+  /// `BuildContext` supply a localized string (e.g. from AppLocalizations);
+  /// without it, a plain English fallback is used.
+  static String? maxLength(
+    String? value,
+    int max, {
+    String fieldName = 'This field',
+    String Function(int max)? message,
+  }) {
     if (value == null || value.trim().isEmpty) return null;
     if (value.trim().length > max) {
-      return '$fieldName must be at most $max characters.';
+      return message?.call(max) ?? '$fieldName must be at most $max characters.';
     }
     return null;
   }
@@ -74,10 +81,14 @@ class Validators {
   /// Validates a comma-separated tag list:
   /// - At most [maxCount] tags (default 20).
   /// - Each individual tag at most [maxTagLength] characters (default 50).
+  /// [tooManyMessage]/[tagTooLongMessage] let a caller supply localized
+  /// strings; without them, a plain English fallback is used.
   static String? tagList(
     String? value, {
     int maxCount = 20,
     int maxTagLength = 50,
+    String Function(int max)? tooManyMessage,
+    String Function(int max)? tagTooLongMessage,
   }) {
     if (value == null || value.trim().isEmpty) return null;
     final tags = value
@@ -86,11 +97,12 @@ class Validators {
         .where((t) => t.isNotEmpty)
         .toList();
     if (tags.length > maxCount) {
-      return 'Add at most $maxCount tags.';
+      return tooManyMessage?.call(maxCount) ?? 'Add at most $maxCount tags.';
     }
     for (final tag in tags) {
       if (tag.length > maxTagLength) {
-        return 'Each tag must be at most $maxTagLength characters.';
+        return tagTooLongMessage?.call(maxTagLength) ??
+            'Each tag must be at most $maxTagLength characters.';
       }
     }
     return null;

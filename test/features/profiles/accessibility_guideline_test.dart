@@ -25,8 +25,10 @@ void main() {
         home: Scaffold(body: widget),
       );
 
+
+
   // ---------------------------------------------------------------------------
-  // Android tap-target guideline — profile screen widgets
+  // Android tap-target size tests — profile screen widgets
   // ---------------------------------------------------------------------------
   group('androidTapTargetGuideline — profile screen widgets', () {
     testWidgets('AppButton meets minimum tap target (48x48)', (tester) async {
@@ -115,7 +117,7 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // labeledTapTargetGuideline — every interactive element must have a label
+  // Accessibility label tests — every interactive element must have a label
   // ---------------------------------------------------------------------------
   group('labeledTapTargetGuideline — profile & settings widgets', () {
     testWidgets('AppButton has explicit button semantics label', (tester) async {
@@ -200,7 +202,7 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // textContrastGuideline — text meets WCAG AA contrast on both themes
+  // Text contrast tests — Check whether text is readable against its background, such as the profile-completeness text and emergency-contact heading.
   // ---------------------------------------------------------------------------
   group('textContrastGuideline — profile & settings text', () {
     testWidgets('Body text on surface passes contrast check (light theme)', (tester) async {
