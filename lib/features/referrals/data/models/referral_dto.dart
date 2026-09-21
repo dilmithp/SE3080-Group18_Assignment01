@@ -9,7 +9,7 @@ part 'referral_dto.g.dart';
 /// stored as epoch milliseconds so this class stays plain-JSON — the data
 /// source bridges Firestore's `Timestamp` type at the boundary.
 @freezed
-class ReferralDto with _$ReferralDto {
+abstract class ReferralDto with _$ReferralDto {
   const ReferralDto._();
 
   const factory ReferralDto({
