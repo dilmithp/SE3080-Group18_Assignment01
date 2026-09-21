@@ -31,24 +31,31 @@ class AppButton extends StatelessWidget {
     final button = secondary
         ? OutlinedButton(
             onPressed: isLoading ? null : onPressed,
-            style: _loadingStyleOverride(scheme),
+            style: _buttonStyle(scheme),
             child: _content(foreground),
           )
         : ElevatedButton(
             onPressed: isLoading ? null : onPressed,
-            style: _loadingStyleOverride(scheme),
+            style: _buttonStyle(scheme),
             child: _content(foreground),
           );
 
-    if (!isLoading) return button;
-    // While loading there is no text left for a screen reader to announce.
-    return Semantics(label: '$label, in progress', child: button);
+    return Semantics(
+      button: true,
+      label: isLoading ? '$label, in progress' : label,
+      enabled: !isLoading && onPressed != null,
+      child: button,
+    );
   }
 
-  /// A loading button is disabled so it cannot be pressed twice, but it must
-  /// not *look* disabled — greying it out reads as "this failed". These
-  /// overrides keep the resting colours while the press is blocked.
-  ButtonStyle? _loadingStyleOverride(ColorScheme scheme) {
+  /// The minimum tap target itself comes from the ambient theme (48dp
+  /// standard, 64dp in Simplified Mode — see AppTheme.minTapTarget /
+  /// minTapTargetSimplified), not from this widget, so it is deliberately
+  /// not overridden here. A loading button is disabled so it cannot be
+  /// pressed twice, but it must not *look* disabled — greying it out reads
+  /// as "this failed" — so these overrides keep the resting colours while
+  /// the press is blocked.
+  ButtonStyle? _buttonStyle(ColorScheme scheme) {
     if (!isLoading) return null;
     if (secondary) {
       return OutlinedButton.styleFrom(disabledForegroundColor: scheme.primary);
