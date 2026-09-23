@@ -11,6 +11,7 @@ import 'package:elderly_companion/core/widgets/staggered_entrance.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/notifications/presentation/widgets/notification_bell.dart';
+import 'package:elderly_companion/l10n/app_localizations.dart';
 
 /// Post-login dashboard. Shell screen owned by no single feature — it just
 /// links out to each feature's placeholder screen and exposes the
@@ -20,18 +21,24 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Elderly Companion'),
+        title: Text(loc.homeTitle),
         actions: [
           const NotificationBell(),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
-            onPressed: () async {
-              await ref.read(authRepositoryProvider).signOut();
-              if (context.mounted) context.go(RouteNames.login);
-            },
+          Semantics(
+            label: loc.signOut,
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: loc.signOut,
+              onPressed: () async {
+                await ref.read(authRepositoryProvider).signOut();
+                if (context.mounted) context.go(RouteNames.login);
+              },
+            ),
           ),
         ],
       ),
@@ -45,16 +52,16 @@ class HomeScreen extends ConsumerWidget {
               AppSpacing.md,
               AppSpacing.xl,
             ),
-            children: const [
-              _Greeting(),
-              SizedBox(height: AppSpacing.lg),
-              _SectionHeader('What would you like to do?'),
-              SizedBox(height: AppSpacing.sm),
-              _NavTiles(),
-              SizedBox(height: AppSpacing.xl),
-              _SectionHeader('Accessibility'),
-              SizedBox(height: AppSpacing.sm),
-              _AccessibilityPanel(),
+            children: [
+              const _Greeting(),
+              const SizedBox(height: AppSpacing.lg),
+              _SectionHeader(loc.homeWhatToDo),
+              const SizedBox(height: AppSpacing.sm),
+              const _NavTiles(),
+              const SizedBox(height: AppSpacing.xl),
+              _SectionHeader(loc.homeAccessibility),
+              const SizedBox(height: AppSpacing.sm),
+              const _AccessibilityPanel(),
             ],
           ),
         ),
@@ -105,13 +112,15 @@ class _NavTiles extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     return Column(
       children: [
         StaggeredEntrance(
           index: 0,
           child: _NavTile(
             icon: Icons.person_outline,
-            title: 'My profile',
+            title: loc.navProfile,
             subtitle: 'View and edit your details',
             tone: _Tone.primary,
             onTap: () => context.push(RouteNames.profile),
@@ -122,7 +131,7 @@ class _NavTiles extends StatelessWidget {
           index: 1,
           child: _NavTile(
             icon: Icons.handshake_outlined,
-            title: 'Find a match',
+            title: loc.navMatching,
             subtitle: 'Companions and helpers near you',
             tone: _Tone.tertiary,
             onTap: () => context.push(RouteNames.matching),
@@ -133,7 +142,7 @@ class _NavTiles extends StatelessWidget {
           index: 2,
           child: _NavTile(
             icon: Icons.event_available_outlined,
-            title: 'Sessions',
+            title: loc.navScheduling,
             subtitle: 'Your bookings and schedule',
             tone: _Tone.primary,
             onTap: () => context.push(RouteNames.scheduling),
@@ -155,7 +164,7 @@ class _NavTiles extends StatelessWidget {
           index: 4,
           child: _NavTile(
             icon: Icons.chat_bubble_outline,
-            title: 'Messages',
+            title: loc.navMessages,
             subtitle: 'Chat with your matches',
             tone: _Tone.secondary,
             onTap: () => context.push(RouteNames.conversations),
@@ -166,7 +175,7 @@ class _NavTiles extends StatelessWidget {
           index: 5,
           child: _NavTile(
             icon: Icons.forum_outlined,
-            title: 'Community',
+            title: loc.navCommunity,
             subtitle: 'Thank-yous, updates and requests',
             tone: _Tone.tertiary,
             onTap: () => context.push(RouteNames.community),
@@ -298,6 +307,7 @@ class _AccessibilityPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
     final accessibility = ref.watch(accessibilityControllerProvider);
     final controller = ref.read(accessibilityControllerProvider.notifier);
 
@@ -306,15 +316,15 @@ class _AccessibilityPanel extends ConsumerWidget {
       child: Column(
         children: [
           SwitchListTile(
-            title: const Text('High contrast'),
-            subtitle: const Text('Stronger colours and bolder outlines'),
+            title: Text(loc.accessibilityHighContrast),
+            subtitle: Text(loc.accessibilityHighContrastDesc),
             value: accessibility.highContrast,
             onChanged: controller.setHighContrast,
           ),
           const Divider(height: 1, indent: AppSpacing.md, endIndent: AppSpacing.md),
           SwitchListTile(
-            title: const Text('Simplified mode'),
-            subtitle: const Text('Fewer things on screen at once'),
+            title: Text(loc.accessibilitySimplified),
+            subtitle: Text(loc.accessibilitySimplifiedDesc),
             value: accessibility.simplifiedMode,
             onChanged: controller.setSimplifiedMode,
           ),
