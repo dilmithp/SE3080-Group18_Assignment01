@@ -14,7 +14,7 @@ part 'chat_message_dto.g.dart';
 /// Firestore's `Timestamp` type at the boundary by hand rather than calling
 /// `fromJson`/`toJson` directly against raw snapshot data.
 @freezed
-class ChatMessageDto with _$ChatMessageDto {
+abstract class ChatMessageDto with _$ChatMessageDto {
   const ChatMessageDto._();
 
   const factory ChatMessageDto({
