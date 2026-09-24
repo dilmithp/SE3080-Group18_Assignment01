@@ -13,6 +13,7 @@ import 'package:elderly_companion/features/auth_trust/presentation/providers/aut
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/referrals/domain/entities/referral.dart';
 import 'package:elderly_companion/features/referrals/presentation/providers/referral_providers.dart';
+import 'package:elderly_companion/features/referrals/presentation/widgets/inline_error.dart';
 
 /// Owner: referrals (new, unassigned in the original team split, same as
 /// `community`). Lets a signed-in user share their own code and, if they
@@ -90,7 +91,7 @@ class _MyCodeCard extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           codeAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => ErrorView(message: error.toString()),
+            error: (error, _) => InlineError(message: error.toString()),
             data: (referralCode) => Row(
               children: [
                 Expanded(
@@ -191,7 +192,7 @@ class _RedeemCodeCardState extends ConsumerState<_RedeemCodeCard> {
 
     return hasRedeemedAsync.when(
       loading: () => const SizedBox.shrink(),
-      error: (error, _) => ErrorView(message: error.toString()),
+      error: (error, _) => AppCard(child: InlineError(message: error.toString())),
       data: (hasRedeemed) {
         if (hasRedeemed) {
           return AppCard(
@@ -264,7 +265,7 @@ class _MyReferralsList extends ConsumerWidget {
         const SizedBox(height: AppSpacing.sm),
         referralsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => ErrorView(message: error.toString()),
+          error: (error, _) => InlineError(message: error.toString()),
           data: (referrals) {
             if (referrals.isEmpty) {
               return const EmptyView(
