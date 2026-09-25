@@ -7,6 +7,9 @@ const _prefsKeyTextScale = 'accessibility.textScale';
 const _prefsKeyHighContrast = 'accessibility.highContrast';
 const _prefsKeySimplifiedMode = 'accessibility.simplifiedMode';
 const _prefsKeyVoiceGuidedPrompts = 'accessibility.voiceGuidedPrompts';
+const _prefsKeyReducedMotion = 'accessibility.reducedMotion';
+const _prefsKeyDataSaver = 'accessibility.dataSaver';
+const _prefsKeyLanguageCode = 'accessibility.languageCode';
 
 /// Owns [AccessibilityState] and persists it with `shared_preferences` so
 /// preferences survive app restarts. Consumed by app.dart to drive
@@ -25,6 +28,9 @@ class AccessibilityController extends Notifier<AccessibilityState> {
       highContrast: prefs.getBool(_prefsKeyHighContrast) ?? false,
       simplifiedMode: prefs.getBool(_prefsKeySimplifiedMode) ?? false,
       voiceGuidedPrompts: prefs.getBool(_prefsKeyVoiceGuidedPrompts) ?? false,
+      reducedMotion: prefs.getBool(_prefsKeyReducedMotion) ?? false,
+      dataSaver: prefs.getBool(_prefsKeyDataSaver) ?? false,
+      languageCode: prefs.getString(_prefsKeyLanguageCode),
     );
   }
 
@@ -54,6 +60,30 @@ class AccessibilityController extends Notifier<AccessibilityState> {
     state = state.copyWith(voiceGuidedPrompts: enabled);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefsKeyVoiceGuidedPrompts, enabled);
+  }
+
+  Future<void> setReducedMotion(bool enabled) async {
+    state = state.copyWith(reducedMotion: enabled);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKeyReducedMotion, enabled);
+  }
+
+  Future<void> setDataSaver(bool enabled) async {
+    state = state.copyWith(dataSaver: enabled);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKeyDataSaver, enabled);
+  }
+
+  /// Sets the app's language. `null` goes back to following the device's
+  /// own locale.
+  Future<void> setLanguage(String? languageCode) async {
+    state = state.copyWith(languageCode: languageCode, clearLanguageCode: languageCode == null);
+    final prefs = await SharedPreferences.getInstance();
+    if (languageCode == null) {
+      await prefs.remove(_prefsKeyLanguageCode);
+    } else {
+      await prefs.setString(_prefsKeyLanguageCode, languageCode);
+    }
   }
 
   /// Merges in values read from the signed-in user's persisted profile

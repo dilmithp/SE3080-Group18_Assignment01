@@ -164,7 +164,7 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
           'updatedAt': Timestamp.now(),
         },
       );
-      return getSession(sessionId);
+      return await getSession(sessionId);
     } on FirebaseException catch (e) {
       throw ServerException(e.message ?? 'Server error.');
     }
@@ -187,7 +187,7 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
         docId: sessionId,
         data: {'status': status.name, 'updatedAt': Timestamp.now()},
       );
-      return getSession(sessionId);
+      return await getSession(sessionId);
     } on FirebaseException catch (e) {
       throw ServerException(e.message ?? 'Server error.');
     } on NotFoundException {
