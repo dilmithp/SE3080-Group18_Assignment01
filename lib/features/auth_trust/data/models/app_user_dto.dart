@@ -12,7 +12,7 @@ part 'app_user_dto.g.dart';
 /// (no custom `Timestamp` converter needed); the data source is
 /// responsible for bridging Firestore's `Timestamp` type at the boundary.
 @freezed
-class AppUserDto with _$AppUserDto {
+abstract class AppUserDto with _$AppUserDto {
   const AppUserDto._();
 
   const factory AppUserDto({

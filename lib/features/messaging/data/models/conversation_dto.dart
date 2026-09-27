@@ -15,7 +15,7 @@ part 'conversation_dto.g.dart';
 /// `MessagingRemoteDataSource`, which builds/reads this DTO by hand against
 /// raw snapshot data rather than calling `fromJson`/`toJson` directly.
 @freezed
-class ConversationDto with _$ConversationDto {
+abstract class ConversationDto with _$ConversationDto {
   const ConversationDto._();
 
   const factory ConversationDto({

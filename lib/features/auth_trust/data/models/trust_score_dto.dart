@@ -6,7 +6,7 @@ part 'trust_score_dto.freezed.dart';
 part 'trust_score_dto.g.dart';
 
 @freezed
-class TrustScoreDto with _$TrustScoreDto {
+abstract class TrustScoreDto with _$TrustScoreDto {
   const TrustScoreDto._();
 
   const factory TrustScoreDto({

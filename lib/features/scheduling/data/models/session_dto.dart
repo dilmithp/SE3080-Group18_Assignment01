@@ -17,7 +17,7 @@ part 'session_dto.g.dart';
 /// keys, and reading one back must produce a valid DTO rather than a parse
 /// failure.
 @freezed
-class SessionDto with _$SessionDto {
+abstract class SessionDto with _$SessionDto {
   const SessionDto._();
 
   const factory SessionDto({

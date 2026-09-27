@@ -15,7 +15,7 @@ part 'match_candidate_dto.g.dart';
 /// is bridged to/from [UserProfileDto] at the edges via
 /// `UserProfileDto.fromJson` / `UserProfileDto.fromEntity(...).toJson()`.
 @freezed
-class MatchCandidateDto with _$MatchCandidateDto {
+abstract class MatchCandidateDto with _$MatchCandidateDto {
   const MatchCandidateDto._();
 
   const factory MatchCandidateDto({

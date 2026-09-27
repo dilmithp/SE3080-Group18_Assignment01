@@ -12,7 +12,7 @@ part 'community_post_dto.g.dart';
 /// converter needed); the data source is responsible for bridging
 /// Firestore's `Timestamp` type at the boundary.
 @freezed
-class CommunityPostDto with _$CommunityPostDto {
+abstract class CommunityPostDto with _$CommunityPostDto {
   const CommunityPostDto._();
 
   const factory CommunityPostDto({
