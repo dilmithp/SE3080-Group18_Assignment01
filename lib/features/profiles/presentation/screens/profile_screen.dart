@@ -12,6 +12,7 @@ import 'package:elderly_companion/core/widgets/error_view.dart';
 import 'package:elderly_companion/core/widgets/loading_view.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/widgets/trust_badge_chip.dart';
+import 'package:elderly_companion/features/profiles/domain/entities/profile_completeness.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/profiles/presentation/widgets/emergency_contact_card.dart';
@@ -142,6 +143,10 @@ class _ProfileView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
+              _CompletenessCard(
+                completeness: ProfileCompleteness.of(profile),
+              ),
+              const SizedBox(height: AppSpacing.md),
               EmergencyContactCard(profile: profile),
               if (profile.emergencyContactName?.trim().isNotEmpty == true ||
                   profile.emergencyContactPhone?.trim().isNotEmpty == true)
@@ -157,6 +162,10 @@ class _ProfileView extends StatelessWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+              if (profile.languagesSpoken.isNotEmpty) ...[
+                _TagSection(title: 'Languages', tags: profile.languagesSpoken),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.skillsOffered.isNotEmpty) ...[
@@ -236,6 +245,89 @@ class _Avatar extends StatelessWidget {
     return CircleAvatar(
       radius: 48,
       backgroundImage: NetworkImage(photoUrl!),
+    );
+  }
+}
+
+class _CompletenessCard extends StatelessWidget {
+  const _CompletenessCard({required this.completeness});
+
+  final ProfileCompleteness completeness;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (completeness.isComplete) {
+      return AppCard(
+        child: Row(
+          children: [
+            Icon(Icons.verified_outlined, color: theme.colorScheme.primary),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                'Your profile is complete',
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Profile ${completeness.percent}% complete',
+                  style: theme.textTheme.titleLarge,
+                ),
+              ),
+              Text(
+                '${completeness.completedCount}/${completeness.totalCount}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          LinearProgressIndicator(
+            value: completeness.fraction,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text('Next steps', style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          for (final item in completeness.missing.take(4))
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.radio_button_unchecked,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(child: Text(item, style: theme.textTheme.bodyMedium)),
+                ],
+              ),
+            ),
+          if (completeness.missing.length > 4)
+            Text(
+              'and ${completeness.missing.length - 4} more',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

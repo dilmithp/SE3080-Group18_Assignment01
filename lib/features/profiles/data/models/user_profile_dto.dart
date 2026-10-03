@@ -36,6 +36,7 @@ class UserProfileDto with _$UserProfileDto {
     required Map<String, dynamic> accessibilityPrefs,
     String? emergencyContactName,
     String? emergencyContactPhone,
+    @Default(<String>[]) List<String> languagesSpoken,
   }) = _UserProfileDto;
 
   factory UserProfileDto.fromJson(Map<String, dynamic> json) =>
@@ -68,6 +69,7 @@ class UserProfileDto with _$UserProfileDto {
         },
         emergencyContactName: entity.emergencyContactName,
         emergencyContactPhone: entity.emergencyContactPhone,
+        languagesSpoken: entity.languagesSpoken,
       );
 
   UserProfile toEntity() => UserProfile(
@@ -97,5 +99,6 @@ class UserProfileDto with _$UserProfileDto {
         ),
         emergencyContactName: emergencyContactName,
         emergencyContactPhone: emergencyContactPhone,
+        languagesSpoken: languagesSpoken,
       );
 }

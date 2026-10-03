@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:elderly_companion/core/config/app_config.dart';
 import 'package:elderly_companion/core/error/exceptions.dart';
 import 'package:elderly_companion/core/services/firestore_service.dart';
+import 'package:elderly_companion/features/auth_trust/data/datasources/auth_error_messages.dart';
 import 'package:elderly_companion/features/auth_trust/data/models/app_user_dto.dart';
 import 'package:elderly_companion/features/auth_trust/data/models/trust_score_dto.dart';
 import 'package:elderly_companion/features/auth_trust/data/models/verification_request_dto.dart';
@@ -32,6 +33,8 @@ abstract class AuthTrustRemoteDataSource {
   Stream<AppUserDto?> authStateChanges();
 
   Future<void> sendSignInLinkToEmail(String email);
+
+  Future<void> sendPasswordResetEmail(String email);
 
   Future<AppUserDto> signInWithEmailLink({
     required String email,
@@ -176,7 +179,7 @@ class FirebaseAuthTrustRemoteDataSource implements AuthTrustRemoteDataSource {
       }
       return dto;
     } on FirebaseAuthException catch (e) {
-      throw AuthException(e.message ?? 'Sign-in failed.');
+      throw AuthException(friendlyAuthMessage(e.code, e.message ?? 'Sign-in failed.'));
     } on NotFoundException {
       rethrow;
     } catch (_) {
@@ -207,6 +210,19 @@ class FirebaseAuthTrustRemoteDataSource implements AuthTrustRemoteDataSource {
       );
     } on FirebaseAuthException catch (e) {
       throw AuthException(e.message ?? 'Could not send sign-in link.');
+    } catch (_) {
+      throw const ServerException();
+    }
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(
+        friendlyAuthMessage(e.code, e.message ?? 'Could not send reset email.'),
+      );
     } catch (_) {
       throw const ServerException();
     }

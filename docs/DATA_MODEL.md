@@ -66,6 +66,7 @@ Owner: **profiles** (Perera) · entity: `UserProfile`
 | `accessibilityPrefs` | map | `{ largeText, highContrast, simplifiedInterface, communicationNotes }` |
 | `emergencyContactName` | string? | optional safety contact name |
 | `emergencyContactPhone` | string? | optional safety contact phone, dialed via `EmergencyContactCard`'s `tel:` link |
+| `languagesSpoken` | array\<string\> | optional, defaults to `[]` for older docs; e.g. `English`, `Sinhala`, `Tamil` |
 
 Doc ID = `userId` (same as `users/{userId}`).
 

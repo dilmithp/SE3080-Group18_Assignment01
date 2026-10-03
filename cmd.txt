@@ -29,3 +29,6 @@ flutter run
 ## Testing
 flutter test                                  # full suite
 flutter test test/features/auth_trust/auth_repository_test.dart   # single file
+
+
+flutter run -d chrome

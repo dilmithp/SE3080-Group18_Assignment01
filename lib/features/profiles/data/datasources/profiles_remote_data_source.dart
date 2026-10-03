@@ -61,6 +61,9 @@ class FirebaseProfilesRemoteDataSource implements ProfilesRemoteDataSource {
       // default rather than an unsafe cast.
       emergencyContactName: data['emergencyContactName'] as String?,
       emergencyContactPhone: data['emergencyContactPhone'] as String?,
+      languagesSpoken: List<String>.from(
+        (data['languagesSpoken'] as List?) ?? const <String>[],
+      ),
     );
   }
 

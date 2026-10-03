@@ -69,3 +69,10 @@ web/maps_config.js
 # Run: flutter create . --platforms=android,ios
 /android/
 /ios/
+
+# Ruflo local secrets and runtime data
+.env.local
+.env.*.local
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/

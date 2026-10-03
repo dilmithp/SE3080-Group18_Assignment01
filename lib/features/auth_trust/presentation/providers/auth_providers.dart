@@ -13,6 +13,7 @@ import 'package:elderly_companion/features/auth_trust/domain/repositories/trust_
 import 'package:elderly_companion/features/auth_trust/domain/repositories/verification_repository.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/get_trust_score_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/review_verification_request_usecase.dart';
+import 'package:elderly_companion/features/auth_trust/domain/usecases/send_password_reset_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/send_sign_in_link_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/sign_in_with_email_link_usecase.dart';
 import 'package:elderly_companion/features/auth_trust/domain/usecases/sign_in_with_email_usecase.dart';
@@ -65,6 +66,10 @@ final sendSignInLinkUseCaseProvider = Provider<SendSignInLinkUseCase>((ref) {
 final signInWithEmailLinkUseCaseProvider =
     Provider<SignInWithEmailLinkUseCase>((ref) {
   return SignInWithEmailLinkUseCase(ref.watch(authRepositoryProvider));
+});
+
+final sendPasswordResetUseCaseProvider = Provider<SendPasswordResetUseCase>((ref) {
+  return SendPasswordResetUseCase(ref.watch(authRepositoryProvider));
 });
 
 final updateUserRoleUseCaseProvider = Provider<UpdateUserRoleUseCase>((ref) {

@@ -34,6 +34,11 @@ abstract class AuthRepository {
   /// source) so opening it lands back in this app with `handleCodeInApp`.
   Future<Either<Failure, void>> sendSignInLinkToEmail(String email);
 
+  /// Emails a password-reset link. Always reports success to the caller
+  /// for unknown addresses too, so the UI never reveals whether an account
+  /// exists.
+  Future<Either<Failure, void>> sendPasswordResetEmail(String email);
+
   /// Completes a passwordless sign-in started by [sendSignInLinkToEmail].
   /// [emailLink] is the full URL the user opened (e.g. `Uri.base.toString()`
   /// on web) and [email] must be the same address the link was sent to.

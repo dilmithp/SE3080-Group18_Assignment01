@@ -101,6 +101,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
   late final TextEditingController _localityController;
   late final TextEditingController _skillsController;
   late final TextEditingController _helpController;
+  late final TextEditingController _languagesController;
   late final TextEditingController _communicationNotesController;
   late final TextEditingController _emergencyContactNameController;
   late final TextEditingController _emergencyContactPhoneController;
@@ -138,6 +139,8 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     _localityController = TextEditingController(text: base.locality);
     _skillsController = TextEditingController(text: base.skillsOffered.join(', '));
     _helpController = TextEditingController(text: base.helpNeeded.join(', '));
+    _languagesController =
+        TextEditingController(text: base.languagesSpoken.join(', '));
     _communicationNotesController =
         TextEditingController(text: base.accessibilityPrefs.communicationNotes ?? '');
     _emergencyContactNameController =
@@ -155,6 +158,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     _bioController.dispose();
     _localityController.dispose();
     _skillsController.dispose();
+    _languagesController.dispose();
     _helpController.dispose();
     _communicationNotesController.dispose();
     _emergencyContactNameController.dispose();
@@ -311,6 +315,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
         geoPoint: _geoPoint,
         skillsOffered: _parseTags(_skillsController.text),
         helpNeeded: _parseTags(_helpController.text),
+        languagesSpoken: _parseTags(_languagesController.text),
         availabilityWindows: _availabilityWindows,
         // Not `_base.accessibilityPrefs.copyWith(communicationNotes: ...)` —
         // that class's copyWith does `x ?? this.x`, so passing null to
@@ -351,6 +356,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
         accessibilityPrefs: updated.accessibilityPrefs,
         emergencyContactName: emergencyContactName,
         emergencyContactPhone: emergencyContactPhone,
+        languagesSpoken: updated.languagesSpoken,
       );
       final useCase = ref.read(updateProfileUseCaseProvider);
       final result = await useCase(withEmergencyContact);
@@ -443,6 +449,13 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
                     hint: 'e.g. grocery runs, company on walks',
                     helperText: 'Separate with commas',
                     controller: _helpController,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    label: 'Languages you speak',
+                    hint: 'e.g. English, Sinhala, Tamil',
+                    helperText: 'Helps you find a volunteer who speaks your language',
+                    controller: _languagesController,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AppTextField(

@@ -1,0 +1,160 @@
+SE3080 GROUP 018 - MEMBER WORK PLAN (CareConnect)
+==================================================
+
+Status key
+  DONE         Implemented and in the repo (commit on dev/feature branches)
+  LOCAL        Implemented in the working tree, NOT committed yet - needs owner review
+  CARRY-OVER   Sprint 2 work reopened on the Trello board - still to finish
+  PROPOSED     New feature, pending team agreement on scope and story points
+  SP           Story points (proposed, not yet agreed)
+
+Channel decision: no paid SMS API. All SMS items are replaced by Firebase email.
+  - Firebase Auth's built-in emails cover verification, password reset and
+    email-link sign-in.
+  - Custom codes (emergency contact, reminder fallback) need the Firebase
+    "Trigger Email" extension with an SMTP account (e.g. Gmail app password).
+
+Ownership follows README.md and CLAUDE.md. Do not edit another member's
+feature folder without asking its owner first. Changes to lib/core/ need
+review from at least two other members.
+
+
+------------------------------------------------------------------
+1. PATHIRANA P P D S S  (IT23534254)  - Identity, Access & Trust
+   Folder: lib/features/auth_trust/  |  Branches: feature/auth-trust, feature/trust-score
+------------------------------------------------------------------
+
+Existing (DONE)
+  - Email/password sign-in and email-link (passwordless) sign-in
+  - Role-based access (elderly / volunteer / admin) with Firestore rules
+  - Identity verification: document upload (bytes-based, web-safe) and admin review
+  - Trust score computed by Cloud Functions (functions/index.js)
+
+Advanced features (PROPOSED unless marked)
+  A1. Trust-score explanation screen                              5 SP
+      Shows which events (sessions, feedback, verification) changed the score.
+  A2. Account recovery: password reset + email-link re-verification  3 SP
+      Recovery never reveals whether an email is registered.
+  A3. Sign out of all devices (revoke refresh tokens via Cloud Function)  3 SP
+  A4. Admin audit log: every admin action (verify, reject, role change)
+      written to an auditLogs collection; admins read-only, server-only writes. 5 SP
+  A5. Login throttling and lockout after repeated failed attempts  3 SP
+  A6. Verification document expiry reminder (notify user 30 days before expiry) 3 SP
+
+Carry-over (CARRY-OVER)
+  - None assigned to Pathirana on the board; trust-score Cloud Function is DONE.
+
+Dependencies: A4 needs a Firestore rule update (docs/DATA_MODEL.md + firestore.rules
+in the same PR). A6 needs Ranketh's FCM notification path.
+
+
+------------------------------------------------------------------
+2. PERERA K K L A  (IT23670334)  - User Profiles & Accessibility
+   Folder: lib/features/profiles/ + shared design system  |  Branches: feature/profiles, feature/design-system
+------------------------------------------------------------------
+
+Existing
+  - Profile view/edit, emergency contact card, location picker, photo upload (DONE)
+  - Accessibility settings: text scale, high contrast, simplified mode (DONE)
+  - Profile completeness score with next steps (LOCAL - uncommitted, review needed)
+  - Languages spoken on profile (LOCAL - uncommitted, review needed)
+
+Advanced features (PROPOSED unless marked)
+  P1. Voice-guided prompts: read key labels and actions aloud (uses existing
+      voiceGuidedPrompts setting; no implementation yet)                  5 SP
+  P2. Profile photo crop and compression before upload                    2 SP
+  P3. Emergency contact verification: confirm the contact by email code   5 SP
+  P4. Data export and account deletion (download my data as JSON; delete account
+      and profile, with confirmation)                                     5 SP
+  P5. Accessibility profile sync across devices (already partly built - finish
+      and test the two-way mapping)                                       3 SP
+  P6. Onboarding wizard with step-by-step progress for elderly users      5 SP
+
+Carry-over
+  - None reopened for Perera (Sprint 2 design screens card is marked complete;
+    owner to confirm).
+
+Dependencies: P3 needs the email sender (Ranketh C2).
+P1 touches lib/core/theme/accessibility - needs two reviewers.
+
+
+------------------------------------------------------------------
+3. WIJEKOON W M V M  (IT23600416)  - Matching & Discovery   (Product Owner)
+   Folder: lib/features/matching/  |  Branches: feature/matching, docs/backlog
+------------------------------------------------------------------
+
+Existing
+  - Matching screen, DefaultMatchingStrategy scoring, locality search (DONE)
+  - Selectable matching strategies (DONE, merged to dev)
+
+Advanced features (PROPOSED unless marked)
+  M1. Matching Cloud Function with ranked results                        CARRY-OVER
+      Not in functions/ yet - only trust-score functions exist.
+  M2. Language-aware matching strategy (shared spoken language raises score) 3 SP
+  M3. Distance-ranked matching from profile geo-points (replaces the
+      distanceKm: 0.0 placeholder, haversine, radius filter)              5 SP
+  M4. Match explanation: "why this match" shows skill overlap, distance,
+      and availability overlap                                             5 SP
+  M5. Availability-overlap scoring using availabilityWindows              3 SP
+  M6. Saved searches with new-match alerts (FCM when a new match appears) 5 SP
+
+Dependencies: M1 and M3 should be designed together (server-side ranking).
+M2 needs the languagesSpoken field (LOCAL, Perera's profile work).
+Keep new strategies as new MatchingStrategy implementations (Open/Closed).
+
+
+------------------------------------------------------------------
+4. RANKETH K A D  (IT23543300)  - Scheduling, Sessions & Feedback   (Scrum Master)
+   Folder: lib/features/scheduling/  |  Branches: feature/scheduling, docs/scrum-artifacts
+------------------------------------------------------------------
+
+Existing
+  - Booking lifecycle fields and data layer (DONE)
+  - Recurring sessions: series booking, day picker, see/cancel series (DONE)
+  - Conflict detection with tests (DONE)
+  - Post-session feedback loop, duplicate-rating prevention (DONE)
+
+Carry-over
+  C1. Booking lifecycle, reminders, feedback loop, usability testing  CARRY-OVER
+      Reminders (FCM push + Firebase email) are NOT in the code yet.
+  C2. Email fallback for reminders (Firebase email, no paid SMS)       CARRY-OVER
+
+Advanced features (PROPOSED unless marked)
+  R1. No-show and late-cancellation handling, counted in trust inputs  5 SP
+  R2. Family summary: read-only session history for a linked family member 3 SP
+  R3. Calendar export (.ics) for sessions                              3 SP
+  R4. Session check-in and check-out with consent-based location        5 SP
+  R5. Reminder scheduler as a Cloud Function (scheduled, FCM + email)     5 SP
+      This is the server half of C1/C2 - build together.
+
+Dependencies: R5 is required to finish C1/C2. R1 feeds Pathirana's trust
+recompute (A1 explanation screen will show R1 events).
+
+
+------------------------------------------------------------------
+CROSS-CUTTING (shared, needs two reviewers if in lib/core/)
+------------------------------------------------------------------
+  X1. Offline-tolerant cache for profile and session reads          5 SP
+  X2. Central push-notification routing (one place maps FCM messages to routes) 3 SP
+  X3. Error reporting: non-sensitive crash and failure logging       3 SP
+  X4. Usability testing protocol and 5 participant sessions          (non-code)
+
+
+------------------------------------------------------------------
+SUMMARY
+------------------------------------------------------------------
+  Member        Carry-over   Proposed features   Proposed SP (approx)
+  Pathirana     0            6                   22
+  Perera        0 (LOCAL 2)  6                   25
+  Wijekoon      1            5 (+1 carry)        21
+  Ranketh       2            5                   21
+  Cross-cutting -            3 (+1 non-code)    11
+
+Proposed SP totals are estimates for the team to agree in planning.
+Sprint placement is decided at planning, not here.
+
+Next steps
+  1. Each owner reviews their section and marks which items they accept.
+  2. Team agrees SP and sprint placement (Wijekoon as Scrum Master and Perera
+     as Product Owner for Sprint 3/4, per the rotation in the assignment brief).
+  3. Only then add accepted items to the Trello board.
