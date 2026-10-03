@@ -64,6 +64,9 @@ class FirebaseProfilesRemoteDataSource implements ProfilesRemoteDataSource {
       languagesSpoken: List<String>.from(
         (data['languagesSpoken'] as List?) ?? const <String>[],
       ),
+      safetyPreferences: List<String>.from(
+        (data['safetyPreferences'] as List?) ?? const <String>[],
+      ),
     );
   }
 

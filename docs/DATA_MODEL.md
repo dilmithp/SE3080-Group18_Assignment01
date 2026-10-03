@@ -63,10 +63,11 @@ Owner: **profiles** (Perera) · entity: `UserProfile`
 | `skillsOffered` | array\<string\> | |
 | `helpNeeded` | array\<string\> | |
 | `availabilityWindows` | array\<map\> | `{ dayOfWeek, startTime, endTime }` |
-| `accessibilityPrefs` | map | `{ largeText, highContrast, simplifiedInterface, communicationNotes }` |
+| `accessibilityPrefs` | map | `{ largeText, highContrast, simplifiedInterface, communicationNotes, textScale }`; `textScale` is optional (absent on older profiles, which fall back to `largeText`) |
 | `emergencyContactName` | string? | optional safety contact name |
 | `emergencyContactPhone` | string? | optional safety contact phone, dialed via `EmergencyContactCard`'s `tel:` link |
 | `languagesSpoken` | array\<string\> | optional, defaults to `[]` for older docs; e.g. `English`, `Sinhala`, `Tamil` |
+| `safetyPreferences` | array\<string\> | optional, defaults to `[]`; chosen from `safetyPreferenceOptions` in `domain/entities/safety_preference.dart` |
 
 Doc ID = `userId` (same as `users/{userId}`).
 

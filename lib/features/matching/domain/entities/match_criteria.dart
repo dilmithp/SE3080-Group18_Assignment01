@@ -14,6 +14,7 @@ class MatchCriteria {
     required this.viewerRole,
     this.origin,
     this.strategyType = MatchingStrategyType.balanced,
+    this.preferredLanguages = const [],
   });
 
   final String locality;
@@ -37,6 +38,10 @@ class MatchCriteria {
   /// Which [MatchingStrategy] [FindMatchesUseCase] ranks results with.
   final MatchingStrategyType strategyType;
 
+  /// Languages the searcher speaks and wants a volunteer to share. Empty
+  /// means no language preference, so language does not affect the ranking.
+  final List<String> preferredLanguages;
+
   MatchCriteria copyWith({
     String? locality,
     double? radiusKm,
@@ -46,6 +51,7 @@ class MatchCriteria {
     UserRole? viewerRole,
     GeoCoordinates? origin,
     MatchingStrategyType? strategyType,
+    List<String>? preferredLanguages,
   }) {
     return MatchCriteria(
       locality: locality ?? this.locality,
@@ -56,6 +62,7 @@ class MatchCriteria {
       viewerRole: viewerRole ?? this.viewerRole,
       origin: origin ?? this.origin,
       strategyType: strategyType ?? this.strategyType,
+      preferredLanguages: preferredLanguages ?? this.preferredLanguages,
     );
   }
 
@@ -71,7 +78,8 @@ class MatchCriteria {
           viewerId == other.viewerId &&
           viewerRole == other.viewerRole &&
           origin == other.origin &&
-          strategyType == other.strategyType;
+          strategyType == other.strategyType &&
+          _listEquals(preferredLanguages, other.preferredLanguages);
 
   @override
   int get hashCode => Object.hash(
@@ -83,6 +91,7 @@ class MatchCriteria {
         viewerRole,
         origin,
         strategyType,
+        Object.hashAll(preferredLanguages),
       );
 }
 

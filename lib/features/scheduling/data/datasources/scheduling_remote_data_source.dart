@@ -38,6 +38,13 @@ abstract class SchedulingRemoteDataSource {
     required SessionStatus status,
   });
 
+  /// Writes the check-in time (or check-out time when [checkOut] is true)
+  /// for [sessionId] and returns the updated session.
+  Future<SessionDto> recordAttendance({
+    required String sessionId,
+    required bool checkOut,
+  });
+
   /// Accepts [sessionId] on behalf of [confirmingUserId], re-checking the
   /// slot inside a Firestore transaction. Throws
   /// [SessionConflictException] if the slot was taken in the meantime and
@@ -134,6 +141,32 @@ class FirebaseSchedulingRemoteDataSource implements SchedulingRemoteDataSource {
       rethrow;
     } catch (_) {
       throw const ServerException();
+    }
+  }
+
+  @override
+  Future<SessionDto> recordAttendance({
+    required String sessionId,
+    required bool checkOut,
+  }) async {
+    try {
+      final docRef =
+          _firestoreService.collection(AppConfig.sessionsCollection).doc(sessionId);
+      final existing = await docRef.get();
+      if (existing.data() == null) {
+        throw const NotFoundException('Session not found.');
+      }
+      await _firestoreService.setDocument(
+        collectionPath: AppConfig.sessionsCollection,
+        docId: sessionId,
+        data: {
+          checkOut ? 'checkOutAt' : 'checkInAt': Timestamp.now(),
+          'updatedAt': Timestamp.now(),
+        },
+      );
+      return getSession(sessionId);
+    } on FirebaseException catch (e) {
+      throw ServerException(e.message ?? 'Server error.');
     }
   }
 

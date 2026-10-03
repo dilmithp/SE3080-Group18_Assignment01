@@ -5,6 +5,7 @@ import 'package:elderly_companion/core/config/app_config.dart';
 import 'package:elderly_companion/core/routing/app_router.dart';
 import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/app_theme.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/providers/push_registration.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/accessibility_profile_sync.dart';
 
 class App extends ConsumerWidget {
@@ -19,6 +20,7 @@ class App extends ConsumerWidget {
     // why this composition root is the one place allowed to wire core/theme
     // together with a feature.
     ref.watch(accessibilityProfileSyncProvider);
+    ref.watch(pushRegistrationProvider);
 
     return MaterialApp.router(
       title: AppConfig.appName,

@@ -168,6 +168,13 @@ class _ProfileView extends StatelessWidget {
                 _TagSection(title: 'Languages', tags: profile.languagesSpoken),
                 const SizedBox(height: AppSpacing.md),
               ],
+              if (profile.safetyPreferences.isNotEmpty) ...[
+                _TagSection(
+                  title: 'Safety preferences',
+                  tags: profile.safetyPreferences,
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               if (profile.skillsOffered.isNotEmpty) ...[
                 _TagSection(title: 'Skills offered', tags: profile.skillsOffered),
                 const SizedBox(height: AppSpacing.md),

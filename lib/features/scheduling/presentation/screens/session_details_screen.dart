@@ -18,6 +18,7 @@ import 'package:elderly_companion/features/scheduling/domain/entities/session.da
 import 'package:elderly_companion/features/scheduling/domain/entities/session_feedback.dart';
 import 'package:elderly_companion/features/scheduling/domain/entities/session_status.dart';
 import 'package:elderly_companion/features/scheduling/domain/services/feedback_eligibility.dart';
+import 'package:elderly_companion/features/scheduling/domain/services/session_attendance_rules.dart';
 import 'package:elderly_companion/features/scheduling/presentation/providers/scheduling_providers.dart';
 
 /// Owner: Ranketh (features/scheduling). Real session details wired to
@@ -84,6 +85,32 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
           messenger
             ..hideCurrentSnackBar()
             ..showSnackBar(SnackBar(content: Text('Session ${status.label.toLowerCase()}.')));
+        },
+      );
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
+  Future<void> _recordAttendance({required bool checkOut}) async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _isUpdating = true);
+    try {
+      final useCase = ref.read(recordAttendanceUseCaseProvider);
+      final result = await useCase(
+        sessionId: widget.session.id,
+        checkOut: checkOut,
+        now: DateTime.now(),
+      );
+      result.fold(
+        (failure) => messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(failure.message))),
+        (_) {
+          ref.invalidate(sessionProvider(widget.session.id));
+          messenger
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(checkOut ? 'Checked out.' : 'Checked in.')));
         },
       );
     } finally {
@@ -310,6 +337,21 @@ class _SessionBodyState extends ConsumerState<_SessionBody> {
                 ),
               ],
               const SizedBox(height: AppSpacing.lg),
+              if (currentUserId != null &&
+                  SessionAttendanceRules.canCheckIn(session, DateTime.now()))
+                AppButton(
+                  label: 'Check in',
+                  icon: Icons.login,
+                  isLoading: _isUpdating,
+                  onPressed: () => _recordAttendance(checkOut: false),
+                ),
+              if (currentUserId != null && SessionAttendanceRules.canCheckOut(session))
+                AppButton(
+                  label: 'Check out',
+                  icon: Icons.logout,
+                  secondary: true,
+                  onPressed: () => _recordAttendance(checkOut: true),
+                ),
               ..._actionsFor(session, currentUserId),
               if (currentUserId != null && otherPartyId != null) ...[
                 const SizedBox(height: AppSpacing.sm),

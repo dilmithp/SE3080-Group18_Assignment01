@@ -74,7 +74,28 @@ class FindMatchesUseCase {
       }
     }
 
+    final candidateLanguages =
+        candidate.profile.languagesSpoken.map((l) => l.toLowerCase()).toSet();
+    final sharedLanguages = criteria.preferredLanguages
+        .where((l) => candidateLanguages.contains(l.toLowerCase()))
+        .toList();
+    final languageReason =
+        sharedLanguages.isEmpty ? null : 'Speaks ${sharedLanguages.join(', ')}';
+
     final ordered = switch (criteria.strategyType) {
+      MatchingStrategyType.languageFirst => [
+          languageReason,
+          proximityReason,
+          trustReason,
+          skillReason,
+          availabilityReason,
+        ],
+      MatchingStrategyType.availabilityFirst => [
+          availabilityReason,
+          proximityReason,
+          trustReason,
+          skillReason,
+        ],
       MatchingStrategyType.nearest => [
           proximityReason,
           trustReason,

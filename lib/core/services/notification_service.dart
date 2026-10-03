@@ -18,5 +18,11 @@ class NotificationService {
 
   Stream<RemoteMessage> get onMessage => FirebaseMessaging.onMessage;
 
+  /// A push the user tapped while the app was in the background.
+  Stream<RemoteMessage> get onMessageOpenedApp => FirebaseMessaging.onMessageOpenedApp;
+
+  /// The push that launched the app from a terminated state, if any.
+  Future<RemoteMessage?> getInitialMessage() => _messaging.getInitialMessage();
+
   Stream<String> get onTokenRefresh => _messaging.onTokenRefresh;
 }

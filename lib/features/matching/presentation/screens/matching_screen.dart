@@ -89,7 +89,8 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
         });
         return;
       }
-      final origin = (await ref.read(profileProvider(viewer.id).future))?.geoPoint;
+      final viewerProfile = await ref.read(profileProvider(viewer.id).future);
+      final origin = viewerProfile?.geoPoint;
 
       final result = await useCase(
         MatchCriteria(
@@ -101,6 +102,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
           viewerRole: viewer.role,
           origin: origin,
           strategyType: _strategyType,
+          preferredLanguages: viewerProfile?.languagesSpoken ?? const [],
         ),
       );
       result.fold(

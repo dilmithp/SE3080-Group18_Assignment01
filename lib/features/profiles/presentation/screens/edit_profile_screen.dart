@@ -16,6 +16,7 @@ import 'package:elderly_companion/features/auth_trust/presentation/providers/aut
 import 'package:elderly_companion/features/profiles/domain/entities/accessibility_preferences.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/availability_window.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/geo_coordinates.dart';
+import 'package:elderly_companion/features/profiles/domain/entities/safety_preference.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/profiles/presentation/widgets/location_picker.dart';
@@ -102,6 +103,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
   late final TextEditingController _skillsController;
   late final TextEditingController _helpController;
   late final TextEditingController _languagesController;
+  late Set<String> _safetySelection;
   late final TextEditingController _communicationNotesController;
   late final TextEditingController _emergencyContactNameController;
   late final TextEditingController _emergencyContactPhoneController;
@@ -141,6 +143,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     _helpController = TextEditingController(text: base.helpNeeded.join(', '));
     _languagesController =
         TextEditingController(text: base.languagesSpoken.join(', '));
+    _safetySelection = {...base.safetyPreferences};
     _communicationNotesController =
         TextEditingController(text: base.accessibilityPrefs.communicationNotes ?? '');
     _emergencyContactNameController =
@@ -177,6 +180,8 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       imageQuality: 85,
+      maxWidth: 1024,
+      maxHeight: 1024,
     );
     if (picked == null) return;
 
@@ -316,6 +321,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
         skillsOffered: _parseTags(_skillsController.text),
         helpNeeded: _parseTags(_helpController.text),
         languagesSpoken: _parseTags(_languagesController.text),
+        safetyPreferences: _safetySelection.toList(),
         availabilityWindows: _availabilityWindows,
         // Not `_base.accessibilityPrefs.copyWith(communicationNotes: ...)` —
         // that class's copyWith does `x ?? this.x`, so passing null to
@@ -325,6 +331,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
           largeText: _base.accessibilityPrefs.largeText,
           highContrast: _base.accessibilityPrefs.highContrast,
           simplifiedInterface: _base.accessibilityPrefs.simplifiedInterface,
+          textScale: _base.accessibilityPrefs.textScale,
           communicationNotes: _communicationNotesController.text.trim().isEmpty
               ? null
               : _communicationNotesController.text.trim(),
@@ -357,6 +364,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
         emergencyContactName: emergencyContactName,
         emergencyContactPhone: emergencyContactPhone,
         languagesSpoken: updated.languagesSpoken,
+        safetyPreferences: updated.safetyPreferences,
       );
       final useCase = ref.read(updateProfileUseCaseProvider);
       final result = await useCase(withEmergencyContact);
@@ -456,6 +464,30 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
                     hint: 'e.g. English, Sinhala, Tamil',
                     helperText: 'Helps you find a volunteer who speaks your language',
                     controller: _languagesController,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Safety preferences',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      for (final option in safetyPreferenceOptions)
+                        FilterChip(
+                          label: Text(option),
+                          selected: _safetySelection.contains(option),
+                          onSelected: (selected) => setState(() {
+                            if (selected) {
+                              _safetySelection.add(option);
+                            } else {
+                              _safetySelection.remove(option);
+                            }
+                          }),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AppTextField(

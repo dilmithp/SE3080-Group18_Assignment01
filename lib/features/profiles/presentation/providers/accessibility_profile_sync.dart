@@ -19,7 +19,7 @@ import 'package:elderly_companion/features/profiles/presentation/providers/profi
     // "Large" preset AccessibilitySettingsScreen's quick-picker offers, so
     // seeding from a profile lands on a value the user could have chosen
     // themselves rather than an arbitrary number.
-    textScale: prefs.largeText ? 1.3 : 1.0,
+    textScale: prefs.textScale ?? (prefs.largeText ? 1.3 : 1.0),
   );
 }
 
@@ -35,6 +35,7 @@ AccessibilityPreferences mapAccessibilityStateToPreferences(
     highContrast: state.highContrast,
     simplifiedInterface: state.simplifiedMode,
     communicationNotes: existing.communicationNotes,
+    textScale: state.textScale,
   );
 }
 

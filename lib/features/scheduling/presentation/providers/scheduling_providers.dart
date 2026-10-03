@@ -15,6 +15,7 @@ import 'package:elderly_companion/features/scheduling/domain/usecases/book_sessi
 import 'package:elderly_companion/features/scheduling/domain/usecases/cancel_series_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/confirm_session_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/submit_feedback_usecase.dart';
+import 'package:elderly_companion/features/scheduling/domain/usecases/record_attendance_usecase.dart';
 import 'package:elderly_companion/features/scheduling/domain/usecases/update_session_status_usecase.dart';
 
 /// All Dependency-Inversion wiring for scheduling lives here: presentation
@@ -64,6 +65,10 @@ final confirmSessionUseCaseProvider = Provider<ConfirmSessionUseCase>((ref) {
 
 final updateSessionStatusUseCaseProvider = Provider<UpdateSessionStatusUseCase>((ref) {
   return UpdateSessionStatusUseCase(ref.watch(sessionRepositoryProvider));
+});
+
+final recordAttendanceUseCaseProvider = Provider<RecordAttendanceUseCase>((ref) {
+  return RecordAttendanceUseCase(ref.watch(sessionRepositoryProvider));
 });
 
 final submitFeedbackUseCaseProvider = Provider<SubmitFeedbackUseCase>((ref) {
