@@ -210,3 +210,6 @@ exports.recomputeTrustScoreOnSessionCompletion = onDocumentUpdated(
     }
   }
 );
+
+// Account security functions live in their own module (see account_security.js).
+Object.assign(exports, require('./account_security'));

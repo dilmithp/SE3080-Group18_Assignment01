@@ -25,6 +25,10 @@ abstract class AuthRepository {
 
   Future<Either<Failure, Unit>> signOut();
 
+  /// Revokes every session for the signed-in user (all devices must sign in
+  /// again), then signs this device out.
+  Future<Either<Failure, Unit>> signOutEverywhere();
+
   /// Currently signed-in user, or `null` if signed out. Emits on every
   /// auth-state change (sign-in, sign-out, token refresh).
   Stream<AppUser?> authStateChanges();

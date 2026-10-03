@@ -119,6 +119,21 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, Unit>> signOutEverywhere() async {
+    try {
+      await _dataSource.revokeAllSessions();
+      await _dataSource.signOut();
+      return const Right(unit);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
   Future<Either<Failure, AppUser>> signInWithEmailLink({
     required String email,
     required String emailLink,

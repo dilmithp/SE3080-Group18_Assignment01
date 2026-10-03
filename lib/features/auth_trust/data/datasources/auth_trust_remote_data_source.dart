@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -35,6 +36,8 @@ abstract class AuthTrustRemoteDataSource {
   Future<void> sendSignInLinkToEmail(String email);
 
   Future<void> sendPasswordResetEmail(String email);
+
+  Future<void> revokeAllSessions();
 
   Future<AppUserDto> signInWithEmailLink({
     required String email,
@@ -223,6 +226,17 @@ class FirebaseAuthTrustRemoteDataSource implements AuthTrustRemoteDataSource {
       throw AuthException(
         friendlyAuthMessage(e.code, e.message ?? 'Could not send reset email.'),
       );
+    } catch (_) {
+      throw const ServerException();
+    }
+  }
+
+  @override
+  Future<void> revokeAllSessions() async {
+    try {
+      await FirebaseFunctions.instance.httpsCallable('revokeAllSessions').call<void>();
+    } on FirebaseFunctionsException catch (e) {
+      throw AuthException(e.message ?? 'Could not sign out other devices.');
     } catch (_) {
       throw const ServerException();
     }

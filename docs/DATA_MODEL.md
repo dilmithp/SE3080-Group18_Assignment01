@@ -150,6 +150,19 @@ Owner: **community** (new, unassigned in the original team split) · entity: `Co
 
 Doc ID = auto-generated. Posts are immutable once created — no `update`.
 
+## `auditLogs/{logId}`
+Owner: **auth_trust** (Pathirana) · written only by the `auditVerificationReview` Cloud Function
+
+| Field | Type | Notes |
+|---|---|---|
+| `action` | string | `verification_approved` or `verification_rejected` |
+| `requestId` | string | ref to `verification_requests/{requestId}` |
+| `targetUserId` | string | the user whose verification was reviewed |
+| `actorId` | string? | admin uid who reviewed it |
+| `createdAt` | timestamp | server time |
+
+Admins can read; no client can write (firestore.rules `allow write: if false`).
+
 ## Not a collection: matching
 
 **matching** (Wijekoon) doesn't own a collection — `MatchCandidate` results
