@@ -24,6 +24,7 @@ import 'package:elderly_companion/features/notifications/presentation/screens/no
 import 'package:elderly_companion/features/profiles/presentation/screens/accessibility_settings_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/edit_profile_screen.dart';
 import 'package:elderly_companion/features/profiles/presentation/screens/profile_screen.dart';
+import 'package:elderly_companion/features/referrals/presentation/screens/referrals_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/scheduling_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_details_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_feedback_screen.dart';
@@ -247,6 +248,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'community',
         pageBuilder: (context, state) =>
             _appPage(context, state, const CommunityFeedScreen()),
+      ),
+      GoRoute(
+        path: RouteNames.referrals,
+        name: 'referrals',
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const ReferralsScreen()),
       ),
     ],
   );

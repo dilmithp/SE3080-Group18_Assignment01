@@ -30,6 +30,9 @@ class RouteNames {
   // community
   static const String community = '/community';
 
+  // referrals
+  static const String referrals = '/referrals';
+
   // matching
   static const String matching = '/matching';
   static const String matchDetails = '/matching/:candidateId';
