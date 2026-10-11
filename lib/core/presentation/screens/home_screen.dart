@@ -172,6 +172,17 @@ class _NavTiles extends StatelessWidget {
             onTap: () => context.push(RouteNames.community),
           ),
         ),
+        const SizedBox(height: AppSpacing.sm),
+        StaggeredEntrance(
+          index: 6,
+          child: _NavTile(
+            icon: Icons.card_giftcard_outlined,
+            title: 'Refer a friend',
+            subtitle: 'Share your code, see who you\'ve referred',
+            tone: _Tone.primary,
+            onTap: () => context.push(RouteNames.referrals),
+          ),
+        ),
         Consumer(
           builder: (context, ref, _) {
             final role = ref.watch(authStateProvider).valueOrNull?.role;
@@ -180,7 +191,7 @@ class _NavTiles extends StatelessWidget {
               children: [
                 const SizedBox(height: AppSpacing.sm),
                 StaggeredEntrance(
-                  index: 6,
+                  index: 7,
                   child: _NavTile(
                     icon: Icons.fact_check_outlined,
                     title: 'Verification queue',
