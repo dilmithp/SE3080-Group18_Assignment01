@@ -75,9 +75,11 @@ String? _redirect(Ref ref, GoRouterState state) {
 /// isn't a [ConsumerWidget].
 Page<void> _appPage(BuildContext context, GoRouterState state, Widget child) {
   final container = ProviderScope.containerOf(context, listen: false);
-  final simplified =
-      container.read(accessibilityControllerProvider).simplifiedMode;
-  final reduceMotion = simplified || MediaQuery.of(context).disableAnimations;
+  final accessibility =
+      container.read(accessibilityControllerProvider);
+  final reduceMotion = accessibility.reducedMotion ||
+      accessibility.simplifiedMode ||
+      MediaQuery.of(context).disableAnimations;
 
   if (reduceMotion) {
     return NoTransitionPage(key: state.pageKey, child: child);

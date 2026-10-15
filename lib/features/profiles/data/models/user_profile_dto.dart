@@ -40,6 +40,7 @@ class UserProfileDto with _$UserProfileDto {
     @Default(<String>[]) List<String> safetyPreferences,
   }) = _UserProfileDto;
 
+  // Converts database JSON to DTO
   factory UserProfileDto.fromJson(Map<String, dynamic> json) =>
       _$UserProfileDtoFromJson(json);
 
@@ -74,6 +75,9 @@ class UserProfileDto with _$UserProfileDto {
         languagesSpoken: entity.languagesSpoken,
         safetyPreferences: entity.safetyPreferences,
       );
+
+      //  // Bridges DTO to Domain Entity
+
 
   UserProfile toEntity() => UserProfile(
         userId: userId,

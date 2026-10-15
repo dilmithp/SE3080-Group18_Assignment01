@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
 
   # State management / DI
@@ -42,7 +44,7 @@ dependencies:
   # Identity-document capture for auth_trust verification
   image_picker: ^1.1.2
 
-  intl: ^0.19.0
+  intl: ^0.20.3
 
   # Dialing an emergency contact from the safety card
   url_launcher: ^6.3.1
@@ -53,6 +55,9 @@ dependencies:
 
   # Device geolocation ("use my current location") for the location picker
   geolocator: ^13.0.1
+
+  # Text-to-speech for voice-guided prompts (accessibility feature)
+  flutter_tts: ^4.2.0
 
 dev_dependencies:
   flutter_test:
@@ -67,3 +72,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
+
+dependency_overrides:
+  path_provider_foundation: 2.4.0
+

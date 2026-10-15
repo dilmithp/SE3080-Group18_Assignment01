@@ -21,9 +21,13 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, UserProfile>> getProfile(String userId) async {
     try {
+            // 1. Fetch DTO from data source
       final dto = await _dataSource.getProfile(userId);
-      return Right(dto.toEntity());
+
+      //      // 2. Map DTO to pure Domain Entity and return Right (success)
+return Right(dto.toEntity());
     } on NotFoundException catch (e) {
+      //      // 3. Catch exceptions and map to domain Failures (Left)
       return Left(NotFoundFailure(e.message));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));

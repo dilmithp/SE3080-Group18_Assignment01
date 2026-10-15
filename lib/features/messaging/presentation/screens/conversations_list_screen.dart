@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/app_dimens.dart';
 import 'package:elderly_companion/core/utils/extensions.dart';
 import 'package:elderly_companion/core/widgets/app_card.dart';
@@ -145,21 +146,22 @@ class _ConversationTile extends ConsumerWidget {
   }
 }
 
-class _Avatar extends StatelessWidget {
+class _Avatar extends ConsumerWidget {
   const _Avatar({required this.photoUrl, required this.displayName});
 
   final String? photoUrl;
   final String displayName;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final initial = displayName.isEmpty ? '?' : displayName[0].toUpperCase();
+    final dataSaver = ref.watch(accessibilityControllerProvider).dataSaver;
 
     return CircleAvatar(
       radius: 28,
       backgroundColor: theme.colorScheme.primaryContainer,
-      foregroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
+      foregroundImage: (photoUrl == null || dataSaver) ? null : NetworkImage(photoUrl!),
       child: Text(
         initial,
         style: theme.textTheme.titleLarge?.copyWith(

@@ -31,31 +31,38 @@ class AppButton extends StatelessWidget {
     final button = secondary
         ? OutlinedButton(
             onPressed: isLoading ? null : onPressed,
-            style: _loadingStyleOverride(scheme),
+            style: _buttonStyle(scheme),
             child: _content(foreground),
           )
         : ElevatedButton(
             onPressed: isLoading ? null : onPressed,
-            style: _loadingStyleOverride(scheme),
+            style: _buttonStyle(scheme),
             child: _content(foreground),
           );
 
-    if (!isLoading) return button;
-    // While loading there is no text left for a screen reader to announce.
-    return Semantics(label: '$label, in progress', child: button);
+    return Semantics(
+      button: true,
+      label: isLoading ? '$label, in progress' : label,
+      enabled: !isLoading && onPressed != null,
+      child: button,
+    );
   }
 
-  /// A loading button is disabled so it cannot be pressed twice, but it must
-  /// not *look* disabled — greying it out reads as "this failed". These
-  /// overrides keep the resting colours while the press is blocked.
-  ButtonStyle? _loadingStyleOverride(ColorScheme scheme) {
-    if (!isLoading) return null;
+  /// Explicit minimum tap target (48x48 dp) complying with WCAG 2.5.5 and
+  /// [androidTapTargetGuideline]. A loading button is disabled so it cannot be
+  /// pressed twice, but it preserves resting colors to avoid looking like an error.
+  ButtonStyle _buttonStyle(ColorScheme scheme) {
+    const minTarget = Size(64, kMinInteractiveDimension);
     if (secondary) {
-      return OutlinedButton.styleFrom(disabledForegroundColor: scheme.primary);
+      return OutlinedButton.styleFrom(
+        minimumSize: minTarget,
+        disabledForegroundColor: isLoading ? scheme.primary : null,
+      );
     }
     return ElevatedButton.styleFrom(
-      disabledBackgroundColor: scheme.primary,
-      disabledForegroundColor: scheme.onPrimary,
+      minimumSize: minTarget,
+      disabledBackgroundColor: isLoading ? scheme.primary : null,
+      disabledForegroundColor: isLoading ? scheme.onPrimary : null,
     );
   }
 

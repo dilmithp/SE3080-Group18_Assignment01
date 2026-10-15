@@ -19,6 +19,13 @@ import 'package:elderly_companion/core/theme/app_colors.dart';
 class AppTypography {
   const AppTypography._();
 
+  /// Font family fallbacks for Sinhala and Tamil glyphs, which are not
+  /// present in Atkinson Hyperlegible or Lexend.
+  static const List<String> _fontFamilyFallbacks = [
+    'Noto Sans Sinhala',
+    'Noto Sans Tamil',
+  ];
+
   /// Atkinson ships only w400 and w700, so body roles never ask for a weight
   /// outside that range — an unavailable weight would be synthesised and lose
   /// the letterform tuning that makes the face worth using.
@@ -35,6 +42,7 @@ class AppTypography {
       letterSpacing: letterSpacing,
       height: height,
       color: color,
+      fontFamilyFallback: _fontFamilyFallbacks,
     );
   }
 
@@ -51,6 +59,7 @@ class AppTypography {
       letterSpacing: letterSpacing,
       height: height,
       color: color,
+      fontFamilyFallback: _fontFamilyFallbacks,
     );
   }
 

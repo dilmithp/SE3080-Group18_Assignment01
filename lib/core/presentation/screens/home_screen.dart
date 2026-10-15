@@ -11,6 +11,7 @@ import 'package:elderly_companion/core/widgets/staggered_entrance.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/notifications/presentation/widgets/notification_bell.dart';
+import 'package:elderly_companion/l10n/app_localizations.dart';
 
 /// Post-login dashboard. Shell screen owned by no single feature — it just
 /// links out to each feature's placeholder screen and exposes the
@@ -20,18 +21,24 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Elderly Companion'),
+        title: Text(l10n.homeTitle),
         actions: [
           const NotificationBell(),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
-            onPressed: () async {
-              await ref.read(authRepositoryProvider).signOut();
-              if (context.mounted) context.go(RouteNames.login);
-            },
+          Semantics(
+            label: l10n.signOut,
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: l10n.signOut,
+              onPressed: () async {
+                await ref.read(authRepositoryProvider).signOut();
+                if (context.mounted) context.go(RouteNames.login);
+              },
+            ),
           ),
         ],
       ),
@@ -45,16 +52,16 @@ class HomeScreen extends ConsumerWidget {
               AppSpacing.md,
               AppSpacing.xl,
             ),
-            children: const [
-              _Greeting(),
-              SizedBox(height: AppSpacing.lg),
-              _SectionHeader('What would you like to do?'),
-              SizedBox(height: AppSpacing.sm),
-              _NavTiles(),
-              SizedBox(height: AppSpacing.xl),
-              _SectionHeader('Accessibility'),
-              SizedBox(height: AppSpacing.sm),
-              _AccessibilityPanel(),
+            children: [
+              const _Greeting(),
+              const SizedBox(height: AppSpacing.lg),
+              _SectionHeader(l10n.homeWhatToDo),
+              const SizedBox(height: AppSpacing.sm),
+              const _NavTiles(),
+              const SizedBox(height: AppSpacing.xl),
+              _SectionHeader(l10n.homeAccessibility),
+              const SizedBox(height: AppSpacing.sm),
+              const _AccessibilityPanel(),
             ],
           ),
         ),
@@ -105,13 +112,15 @@ class _NavTiles extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       children: [
         StaggeredEntrance(
           index: 0,
           child: _NavTile(
             icon: Icons.person_outline,
-            title: 'My profile',
+            title: l10n.navProfile,
             subtitle: 'View and edit your details',
             tone: _Tone.primary,
             onTap: () => context.push(RouteNames.profile),
@@ -122,7 +131,7 @@ class _NavTiles extends StatelessWidget {
           index: 1,
           child: _NavTile(
             icon: Icons.handshake_outlined,
-            title: 'Find a match',
+            title: l10n.navMatching,
             subtitle: 'Companions and helpers near you',
             tone: _Tone.tertiary,
             onTap: () => context.push(RouteNames.matching),
@@ -133,7 +142,7 @@ class _NavTiles extends StatelessWidget {
           index: 2,
           child: _NavTile(
             icon: Icons.event_available_outlined,
-            title: 'Sessions',
+            title: l10n.navScheduling,
             subtitle: 'Your bookings and schedule',
             tone: _Tone.primary,
             onTap: () => context.push(RouteNames.scheduling),
@@ -155,7 +164,7 @@ class _NavTiles extends StatelessWidget {
           index: 4,
           child: _NavTile(
             icon: Icons.chat_bubble_outline,
-            title: 'Messages',
+            title: l10n.navMessages,
             subtitle: 'Chat with your matches',
             tone: _Tone.secondary,
             onTap: () => context.push(RouteNames.conversations),
@@ -166,7 +175,7 @@ class _NavTiles extends StatelessWidget {
           index: 5,
           child: _NavTile(
             icon: Icons.forum_outlined,
-            title: 'Community',
+            title: l10n.navCommunity,
             subtitle: 'Thank-yous, updates and requests',
             tone: _Tone.tertiary,
             onTap: () => context.push(RouteNames.community),
@@ -240,43 +249,47 @@ class _NavTile extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = _colors(theme.colorScheme);
 
-    return AppCard(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: colors.background,
-              borderRadius: AppRadius.smallAll,
-              border: Border.all(color: theme.colorScheme.outlineVariant),
+    return Semantics(
+      button: true,
+      label: '$title. $subtitle.',
+      child: AppCard(
+        onTap: onTap,
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: colors.background,
+                borderRadius: AppRadius.smallAll,
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, size: 30, color: colors.foreground),
             ),
-            alignment: Alignment.center,
-            child: Icon(icon, size: 30, color: colors.foreground),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleLarge),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Icon(
-            Icons.chevron_right,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ],
+            const SizedBox(width: AppSpacing.sm),
+            Icon(
+              Icons.chevron_right,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -311,6 +324,14 @@ class _AccessibilityPanel extends ConsumerWidget {
           _TextSizeControl(
             value: accessibility.textScale,
             onChanged: controller.setTextScale,
+          ),
+          const Divider(height: 1, indent: AppSpacing.md, endIndent: AppSpacing.md),
+          ListTile(
+            leading: const Icon(Icons.settings_accessibility_outlined),
+            title: const Text('More Accessibility Settings'),
+            subtitle: const Text('Language, voice prompts, data saver & motion'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(RouteNames.accessibilitySettings),
           ),
         ],
       ),

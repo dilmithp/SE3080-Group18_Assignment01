@@ -53,56 +53,78 @@ class EmergencyContactCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: scheme.errorContainer,
-        borderRadius: AppRadius.cardAll,
-        border: Border.all(color: scheme.error, width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.emergency_outlined, color: scheme.onErrorContainer),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'Emergency contact',
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(color: scheme.onErrorContainer),
+    // Build a descriptive label for assistive tech so TalkBack/VoiceOver
+    // announces the full card content rather than individual fragments.
+    final cardLabel = [
+      'Emergency contact card.',
+      if (name != null) 'Contact name: $name.',
+      if (phone != null) 'Phone number: $phone.',
+      if (phone != null) 'Double-tap the Call button to dial.',
+    ].join(' ');
+
+    return Semantics(
+      label: cardLabel,
+      container: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: scheme.errorContainer,
+          borderRadius: AppRadius.cardAll,
+          border: Border.all(color: scheme.error, width: 1.5),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.emergency_outlined, color: scheme.onErrorContainer),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Emergency contact',
+                    style: theme.textTheme.titleLarge
+                        ?.copyWith(color: scheme.onErrorContainer),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            if (name != null)
+              Text(
+                name,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: scheme.onErrorContainer,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            if (phone != null) ...[
+              SizedBox(height: name != null ? AppSpacing.xs : 0),
+              Text(
+                phone,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: scheme.onErrorContainer),
+              ),
+            ],
+            if (phone != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              // Explicit Semantics label so TalkBack/VoiceOver announces the
+              // button purpose even when the dynamically constructed label
+              // (e.g. "Call Amara") would otherwise be truncated or ignored.
+              Semantics(
+                label: name != null
+                    ? 'Call emergency contact $name at $phone'
+                    : 'Call emergency contact at $phone',
+                button: true,
+                child: AppButton(
+                  label: name != null ? 'Call $name' : 'Call emergency contact',
+                  icon: Icons.call,
+                  onPressed: () => _call(context, phone),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          if (name != null)
-            Text(
-              name,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: scheme.onErrorContainer,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          if (phone != null) ...[
-            SizedBox(height: name != null ? AppSpacing.xs : 0),
-            Text(
-              phone,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: scheme.onErrorContainer),
-            ),
           ],
-          if (phone != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            AppButton(
-              label: name != null ? 'Call $name' : 'Call emergency contact',
-              icon: Icons.call,
-              onPressed: () => _call(context, phone),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

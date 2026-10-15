@@ -53,12 +53,55 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── Profile field validation helper ───────────────────────────────────
+    // Enforces type checks and length limits on client-submitted profile data.
+    // These limits mirror the constants in edit_profile_screen.dart so that
+    // server and client rules stay in sync.
+    function validateProfile(data) {
+      // displayName: required string ≤ 100 chars
+      let nameOk = data.displayName is string && data.displayName.size() <= 100;
+      // bio: string ≤ 500 chars
+      let bioOk = !('bio' in data) || (data.bio is string && data.bio.size() <= 500);
+      // locality: string ≤ 200 chars
+      let localityOk = !('locality' in data) || (data.locality is string && data.locality.size() <= 200);
+      // skillsOffered: list ≤ 20 items, each ≤ 50 chars
+      let skillsOk = !('skillsOffered' in data) || (
+        data.skillsOffered is list && data.skillsOffered.size() <= 20
+      );
+      // helpNeeded: list ≤ 20 items
+      let helpOk = !('helpNeeded' in data) || (
+        data.helpNeeded is list && data.helpNeeded.size() <= 20
+      );
+      // languagesSpoken: list ≤ 20 items
+      let langsOk = !('languagesSpoken' in data) || (
+        data.languagesSpoken is list && data.languagesSpoken.size() <= 20
+      );
+      // safetyPreferences: list ≤ 20 items
+      let safetyOk = !('safetyPreferences' in data) || (
+        data.safetyPreferences is list && data.safetyPreferences.size() <= 20
+      );
+      // emergencyContactPhone: if present, string ≤ 20 chars ("+NNNNNNNNNNNNNNN")
+      let phoneOk = !('emergencyContactPhone' in data) || (
+        data.emergencyContactPhone == null ||
+        (data.emergencyContactPhone is string && data.emergencyContactPhone.size() <= 20)
+      );
+      // emergencyContactName: string ≤ 100 chars
+      let contactNameOk = !('emergencyContactName' in data) || (
+        data.emergencyContactName == null ||
+        (data.emergencyContactName is string && data.emergencyContactName.size() <= 100)
+      );
+      return nameOk && bioOk && localityOk && skillsOk && helpOk &&
+             langsOk && safetyOk && phoneOk && contactNameOk;
+    }
+
     // profiles/{userId} — UserProfile. Readable by any signed-in user
-    // (needed for matching/search); only the owner can write.
+    // (needed for matching/search); only the owner can write, and only with
+    // valid field types and lengths (enforced by validateProfile above).
     match /profiles/{userId} {
       allow read: if isSignedIn();
-      allow write: if isOwner(userId);
+      allow write: if isOwner(userId) && validateProfile(request.resource.data);
     }
+
 
     // sessions/{sessionId} — Session. Only the two participants
     // (requester/volunteer) can read, create, or update.

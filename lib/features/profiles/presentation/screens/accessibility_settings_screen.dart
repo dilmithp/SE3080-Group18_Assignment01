@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:elderly_companion/core/services/tts_provider.dart';
 import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/accessibility/accessibility_state.dart';
 import 'package:elderly_companion/core/widgets/app_button.dart';
@@ -13,13 +14,15 @@ import 'package:elderly_companion/features/profiles/presentation/providers/profi
 /// - Dynamic Text Scaling (0.85x to 1.6x slider & quick presets)
 /// - High Contrast Mode toggle
 /// - Simplified Interface Mode toggle
-/// - Voice-Guided Prompts toggle
+/// - Reduced Motion toggle (independent from OS setting)
+/// - Voice-Guided Prompts toggle (wired to [TtsService])
+/// - Data Saver toggle
+/// - Language picker (English / Sinhala / Tamil)
 ///
 /// Every change also writes through to the signed-in user's persisted
 /// `UserProfile.accessibilityPrefs` (best-effort, silently skipped if not
 /// signed in or no profile exists yet) so it follows them to a new device —
 /// see AccessibilityProfileSync for the seed-on-sign-in half of that sync.
-/// `voiceGuidedPrompts` has no persisted counterpart and stays local-only.
 class AccessibilitySettingsScreen extends ConsumerWidget {
   const AccessibilitySettingsScreen({super.key});
 
@@ -54,25 +57,33 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           _buildDisplayCard(context, ref, accessibility, controller),
           const SizedBox(height: 16),
-          _buildVoiceGuidanceCard(context, accessibility, controller),
+          _buildVoiceGuidanceCard(context, ref, accessibility, controller),
+          const SizedBox(height: 16),
+          _buildLanguageCard(context, ref, accessibility, controller),
           const SizedBox(height: 24),
-          AppButton(
-            label: 'Reset Accessibility Defaults',
-            secondary: true,
-            onPressed: () async {
-              await controller.setTextScale(1.0);
-              await controller.setHighContrast(false);
-              await controller.setSimplifiedMode(false);
-              await controller.setVoiceGuidedPrompts(false);
-              await _writeThrough(ref, ref.read(accessibilityControllerProvider));
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Accessibility preferences reset to default.'),
-                  ),
-                );
-              }
-            },
+          Semantics(
+            label: 'Reset all accessibility preferences to default',
+            button: true,
+            child: AppButton(
+              label: 'Reset Accessibility Defaults',
+              secondary: true,
+              onPressed: () async {
+                await controller.setTextScale(1.0);
+                await controller.setHighContrast(false);
+                await controller.setSimplifiedMode(false);
+                await controller.setVoiceGuidedPrompts(false);
+                await controller.setReducedMotion(false);
+                await controller.setDataSaver(false);
+                await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Accessibility preferences reset to default.'),
+                    ),
+                  );
+                }
+              },
+            ),
           ),
         ],
       ),
@@ -82,7 +93,8 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
   Widget _buildHeader(BuildContext context, AccessibilityState accessibility) {
     final theme = Theme.of(context);
     return Semantics(
-      label: 'Accessibility Preferences Header',
+      label: 'Accessibility Preferences Header. '
+          'Adjust text sizes, screen contrast, and navigation to best fit your comfort.',
       child: AppCard(
         child: Row(
           children: [
@@ -172,47 +184,63 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Slider(
-            value: state.textScale,
-            min: AccessibilityState.minTextScale,
-            max: AccessibilityState.maxTextScale,
-            divisions: 5,
-            label: '$scalePercent%',
-            onChanged: (val) async {
-              await controller.setTextScale(val);
-              await _writeThrough(ref, ref.read(accessibilityControllerProvider));
-            },
+          Semantics(
+            label: 'Text scale slider: $scalePercent%',
+            slider: true,
+            child: Slider(
+              value: state.textScale,
+              min: AccessibilityState.minTextScale,
+              max: AccessibilityState.maxTextScale,
+              divisions: 5,
+              label: '$scalePercent%',
+              onChanged: (val) async {
+                await controller.setTextScale(val);
+                await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+              },
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () async {
-                    await controller.setTextScale(1.0);
-                    await _writeThrough(ref, ref.read(accessibilityControllerProvider));
-                  },
-                  child: const Text('Standard'),
+                child: Semantics(
+                  label: 'Set text to standard size (100%)',
+                  button: true,
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      await controller.setTextScale(1.0);
+                      await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+                    },
+                    child: const Text('Standard'),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () async {
-                    await controller.setTextScale(1.3);
-                    await _writeThrough(ref, ref.read(accessibilityControllerProvider));
-                  },
-                  child: const Text('Large'),
+                child: Semantics(
+                  label: 'Set text to large size (130%)',
+                  button: true,
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      await controller.setTextScale(1.3);
+                      await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+                    },
+                    child: const Text('Large'),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () async {
-                    await controller.setTextScale(1.5);
-                    await _writeThrough(ref, ref.read(accessibilityControllerProvider));
-                  },
-                  child: const Text('Extra Large'),
+                child: Semantics(
+                  label: 'Set text to extra large size (150%)',
+                  button: true,
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      await controller.setTextScale(1.5);
+                      await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+                    },
+                    child: const Text('Extra Large'),
+                  ),
                 ),
               ),
             ],
@@ -241,30 +269,52 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 8),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('High Contrast Mode'),
-            subtitle: const Text(
-              'Increases text and button contrast for higher readability.',
+          Semantics(
+            label: 'High Contrast Mode toggle, currently ${state.highContrast ? "on" : "off"}',
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('High Contrast Mode'),
+              subtitle: const Text(
+                'Increases text and button contrast for higher readability.',
+              ),
+              value: state.highContrast,
+              onChanged: (enabled) async {
+                await controller.setHighContrast(enabled);
+                await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+              },
             ),
-            value: state.highContrast,
-            onChanged: (enabled) async {
-              await controller.setHighContrast(enabled);
-              await _writeThrough(ref, ref.read(accessibilityControllerProvider));
-            },
           ),
           const Divider(),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Simplified Interface'),
-            subtitle: const Text(
-              'Reduces visual clutter and enlarges touch controls.',
+          Semantics(
+            label: 'Simplified Interface toggle, currently ${state.simplifiedMode ? "on" : "off"}',
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Simplified Interface'),
+              subtitle: const Text(
+                'Reduces visual clutter and enlarges touch controls.',
+              ),
+              value: state.simplifiedMode,
+              onChanged: (enabled) async {
+                await controller.setSimplifiedMode(enabled);
+                await _writeThrough(ref, ref.read(accessibilityControllerProvider));
+              },
             ),
-            value: state.simplifiedMode,
-            onChanged: (enabled) async {
-              await controller.setSimplifiedMode(enabled);
-              await _writeThrough(ref, ref.read(accessibilityControllerProvider));
-            },
+          ),
+          const Divider(),
+          Semantics(
+            label: 'Reduced Motion toggle, currently ${state.reducedMotion ? "on" : "off"}. '
+                'When on, disables decorative animations regardless of the phone setting.',
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Reduced Motion'),
+              subtitle: const Text(
+                'Disables decorative animations throughout the app.',
+              ),
+              value: state.reducedMotion,
+              onChanged: (enabled) async {
+                await controller.setReducedMotion(enabled);
+              },
+            ),
           ),
         ],
       ),
@@ -273,6 +323,7 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
 
   Widget _buildVoiceGuidanceCard(
     BuildContext context,
+    WidgetRef ref,
     AccessibilityState state,
     AccessibilityController controller,
   ) {
@@ -289,15 +340,96 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 8),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Voice-Guided Prompts'),
-            subtitle: const Text(
-              'Announce spoken guidance hints for screen actions and forms.',
+          Semantics(
+            label: 'Voice-Guided Prompts toggle, currently ${state.voiceGuidedPrompts ? "on" : "off"}. '
+                'When on, the app reads key actions aloud.',
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Voice-Guided Prompts'),
+              subtitle: const Text(
+                'Reads out guidance hints for screen actions and forms.',
+              ),
+              value: state.voiceGuidedPrompts,
+              onChanged: (enabled) async {
+                await controller.setVoiceGuidedPrompts(enabled);
+                if (enabled) {
+                  // Announce immediately so the user hears confirmation.
+                  await ref.read(ttsServiceProvider).speak(
+                    'Voice-guided prompts are now on.',
+                    voiceGuidedEnabled: true,
+                  );
+                }
+              },
             ),
-            value: state.voiceGuidedPrompts,
-            onChanged: (enabled) => controller.setVoiceGuidedPrompts(enabled),
           ),
+          const Divider(),
+          Semantics(
+            label: 'Data Saver toggle, currently ${state.dataSaver ? "on" : "off"}. '
+                'When on, profile photos are compressed and hidden in lists.',
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Data Saver'),
+              subtitle: const Text(
+                'Shrinks photo uploads and hides images in lists to reduce data use.',
+              ),
+              value: state.dataSaver,
+              onChanged: (enabled) async {
+                await controller.setDataSaver(enabled);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageCard(
+    BuildContext context,
+    WidgetRef ref,
+    AccessibilityState state,
+    AccessibilityController controller,
+  ) {
+    final theme = Theme.of(context);
+
+    final languages = [
+      (code: 'en', label: 'English'),
+      (code: 'si', label: 'සිංහල (Sinhala)'),
+      (code: 'ta', label: 'தமிழ் (Tamil)'),
+    ];
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Language',
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Choose the language for the app interface.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          for (final lang in languages)
+            Semantics(
+              label: '${lang.label} language option, '
+                  '${state.locale == lang.code ? "currently selected" : ""}',
+              selected: state.locale == lang.code,
+              button: true,
+              child: RadioListTile<String>(
+                title: Text(lang.label),
+                value: lang.code,
+                groupValue: state.locale,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (value) async {
+                  if (value == null) return;
+                  await controller.setLocale(value);
+                  // Update TTS language to match.
+                  await ref.read(ttsServiceProvider).setLocale(value);
+                },
+              ),
+            ),
         ],
       ),
     );

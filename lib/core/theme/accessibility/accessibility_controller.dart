@@ -7,6 +7,9 @@ const _prefsKeyTextScale = 'accessibility.textScale';
 const _prefsKeyHighContrast = 'accessibility.highContrast';
 const _prefsKeySimplifiedMode = 'accessibility.simplifiedMode';
 const _prefsKeyVoiceGuidedPrompts = 'accessibility.voiceGuidedPrompts';
+const _prefsKeyReducedMotion = 'accessibility.reducedMotion';
+const _prefsKeyDataSaver = 'accessibility.dataSaver';
+const _prefsKeyLocale = 'accessibility.locale';
 
 /// Owns [AccessibilityState] and persists it with `shared_preferences` so
 /// preferences survive app restarts. Consumed by app.dart to drive
@@ -25,6 +28,9 @@ class AccessibilityController extends Notifier<AccessibilityState> {
       highContrast: prefs.getBool(_prefsKeyHighContrast) ?? false,
       simplifiedMode: prefs.getBool(_prefsKeySimplifiedMode) ?? false,
       voiceGuidedPrompts: prefs.getBool(_prefsKeyVoiceGuidedPrompts) ?? false,
+      reducedMotion: prefs.getBool(_prefsKeyReducedMotion) ?? false,
+      dataSaver: prefs.getBool(_prefsKeyDataSaver) ?? false,
+      locale: prefs.getString(_prefsKeyLocale) ?? 'en',
     );
   }
 
@@ -56,11 +62,30 @@ class AccessibilityController extends Notifier<AccessibilityState> {
     await prefs.setBool(_prefsKeyVoiceGuidedPrompts, enabled);
   }
 
+  Future<void> setReducedMotion(bool enabled) async {
+    state = state.copyWith(reducedMotion: enabled);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKeyReducedMotion, enabled);
+  }
+
+  Future<void> setDataSaver(bool enabled) async {
+    state = state.copyWith(dataSaver: enabled);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKeyDataSaver, enabled);
+  }
+
+  Future<void> setLocale(String languageCode) async {
+    state = state.copyWith(locale: languageCode);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKeyLocale, languageCode);
+  }
+
   /// Merges in values read from the signed-in user's persisted profile
   /// (`UserProfile.accessibilityPrefs`, owned by features/profiles) without
   /// this class knowing that type exists — the caller maps that shape down
-  /// to these three primitives first. [voiceGuidedPrompts] has no persisted
-  /// counterpart, so it's left untouched.
+  /// to these three primitives first. [voiceGuidedPrompts], [reducedMotion],
+  /// [dataSaver] and [locale] have no persisted counterpart in the profile
+  /// document, so they are left untouched.
   Future<void> seedFrom({
     required bool highContrast,
     required bool simplifiedMode,
