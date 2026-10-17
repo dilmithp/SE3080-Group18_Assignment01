@@ -11,6 +11,7 @@ class AccessibilityPreferences {
     required this.highContrast,
     required this.simplifiedInterface,
     this.communicationNotes,
+    this.textScale,
   });
 
   final bool largeText;
@@ -18,17 +19,23 @@ class AccessibilityPreferences {
   final bool simplifiedInterface;
   final String? communicationNotes;
 
+  /// The exact text scale the user chose. Null on profiles saved before this
+  /// field existed; those fall back to [largeText].
+  final double? textScale;
+
   AccessibilityPreferences copyWith({
     bool? largeText,
     bool? highContrast,
     bool? simplifiedInterface,
     String? communicationNotes,
+    double? textScale,
   }) {
     return AccessibilityPreferences(
       largeText: largeText ?? this.largeText,
       highContrast: highContrast ?? this.highContrast,
       simplifiedInterface: simplifiedInterface ?? this.simplifiedInterface,
       communicationNotes: communicationNotes ?? this.communicationNotes,
+      textScale: textScale ?? this.textScale,
     );
   }
 
@@ -40,9 +47,15 @@ class AccessibilityPreferences {
           largeText == other.largeText &&
           highContrast == other.highContrast &&
           simplifiedInterface == other.simplifiedInterface &&
-          communicationNotes == other.communicationNotes;
+          communicationNotes == other.communicationNotes &&
+          textScale == other.textScale;
 
   @override
-  int get hashCode =>
-      Object.hash(largeText, highContrast, simplifiedInterface, communicationNotes);
+  int get hashCode => Object.hash(
+        largeText,
+        highContrast,
+        simplifiedInterface,
+        communicationNotes,
+        textScale,
+      );
 }

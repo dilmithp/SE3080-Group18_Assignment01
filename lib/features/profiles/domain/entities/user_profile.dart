@@ -19,6 +19,8 @@ class UserProfile {
     required this.accessibilityPrefs,
     this.emergencyContactName,
     this.emergencyContactPhone,
+    this.languagesSpoken = const [],
+    this.safetyPreferences = const [],
   });
 
   final String userId;
@@ -37,6 +39,13 @@ class UserProfile {
   final String? emergencyContactName;
   final String? emergencyContactPhone;
 
+  /// Languages the user can converse in, e.g. "English", "Sinhala", "Tamil".
+  /// Lets elderly users pick a volunteer who speaks their language.
+  final List<String> languagesSpoken;
+
+  /// Conditions the user asks for before a visit, from safety_preference.dart.
+  final List<String> safetyPreferences;
+
   UserProfile copyWith({
     String? userId,
     String? displayName,
@@ -50,6 +59,8 @@ class UserProfile {
     AccessibilityPreferences? accessibilityPrefs,
     String? emergencyContactName,
     String? emergencyContactPhone,
+    List<String>? languagesSpoken,
+    List<String>? safetyPreferences,
   }) {
     return UserProfile(
       userId: userId ?? this.userId,
@@ -64,6 +75,8 @@ class UserProfile {
       accessibilityPrefs: accessibilityPrefs ?? this.accessibilityPrefs,
       emergencyContactName: emergencyContactName ?? this.emergencyContactName,
       emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
+      languagesSpoken: languagesSpoken ?? this.languagesSpoken,
+      safetyPreferences: safetyPreferences ?? this.safetyPreferences,
     );
   }
 
@@ -83,7 +96,9 @@ class UserProfile {
           _listEquals(availabilityWindows, other.availabilityWindows) &&
           accessibilityPrefs == other.accessibilityPrefs &&
           emergencyContactName == other.emergencyContactName &&
-          emergencyContactPhone == other.emergencyContactPhone;
+          emergencyContactPhone == other.emergencyContactPhone &&
+          _listEquals(languagesSpoken, other.languagesSpoken) &&
+          _listEquals(safetyPreferences, other.safetyPreferences);
 
   @override
   int get hashCode => Object.hash(
@@ -99,6 +114,8 @@ class UserProfile {
         accessibilityPrefs,
         emergencyContactName,
         emergencyContactPhone,
+        Object.hashAll(languagesSpoken),
+        Object.hashAll(safetyPreferences),
       );
 }
 

@@ -41,6 +41,12 @@ abstract class SessionRepository {
   ///
   /// Returns a [Failure] carrying a conflict message when the slot was
   /// taken in the meantime.
+  /// Records check-in (or check-out when [checkOut] is true) for [sessionId].
+  Future<Either<Failure, Session>> recordAttendance({
+    required String sessionId,
+    required bool checkOut,
+  });
+
   Future<Either<Failure, Session>> confirmSession({
     required String sessionId,
     required String confirmingUserId,

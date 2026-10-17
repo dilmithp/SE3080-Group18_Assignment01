@@ -9,6 +9,9 @@ class AccessibilityState {
     this.highContrast = false,
     this.simplifiedMode = false,
     this.voiceGuidedPrompts = false,
+    this.reducedMotion = false,
+    this.dataSaver = false,
+    this.languageCode,
   });
 
   /// Multiplier applied on top of the base 16sp body text. Clamped to
@@ -25,6 +28,20 @@ class AccessibilityState {
   /// Enables voice-guided prompt descriptions and audio cues for screen elements.
   final bool voiceGuidedPrompts;
 
+  /// Disables decorative animations in the app regardless of the OS "reduce
+  /// motion" setting. Folded into `MediaQuery.disableAnimations` by app.dart,
+  /// so [AppMotion.reduced] picks this up automatically without its own check.
+  final bool reducedMotion;
+
+  /// When true, profile photo uploads are compressed more aggressively and
+  /// images in list views are replaced by placeholders to reduce data use.
+  final bool dataSaver;
+
+  /// `en`, `si` or `ta` to force that language; `null` follows the device's
+  /// own locale (falling back to English if the device locale isn't one of
+  /// the three the app ships translations for).
+  final String? languageCode;
+
   static const double minTextScale = 0.85;
   static const double maxTextScale = 1.6;
 
@@ -33,20 +50,30 @@ class AccessibilityState {
     bool? highContrast,
     bool? simplifiedMode,
     bool? voiceGuidedPrompts,
+    bool? reducedMotion,
+    bool? dataSaver,
+    String? languageCode,
+    bool clearLanguageCode = false,
   }) {
     return AccessibilityState(
       textScale: textScale ?? this.textScale,
       highContrast: highContrast ?? this.highContrast,
       simplifiedMode: simplifiedMode ?? this.simplifiedMode,
       voiceGuidedPrompts: voiceGuidedPrompts ?? this.voiceGuidedPrompts,
+      reducedMotion: reducedMotion ?? this.reducedMotion,
+      dataSaver: dataSaver ?? this.dataSaver,
+      languageCode: clearLanguageCode ? null : (languageCode ?? this.languageCode),
     );
   }
 
-  Map<String, Object> toJson() => {
+  Map<String, Object?> toJson() => {
         'textScale': textScale,
         'highContrast': highContrast,
         'simplifiedMode': simplifiedMode,
         'voiceGuidedPrompts': voiceGuidedPrompts,
+        'reducedMotion': reducedMotion,
+        'dataSaver': dataSaver,
+        'languageCode': languageCode,
       };
 
   factory AccessibilityState.fromJson(Map<String, Object?> json) {
@@ -55,6 +82,9 @@ class AccessibilityState {
       highContrast: json['highContrast'] as bool? ?? false,
       simplifiedMode: json['simplifiedMode'] as bool? ?? false,
       voiceGuidedPrompts: json['voiceGuidedPrompts'] as bool? ?? false,
+      reducedMotion: json['reducedMotion'] as bool? ?? false,
+      dataSaver: json['dataSaver'] as bool? ?? false,
+      languageCode: json['languageCode'] as String?,
     );
   }
 
@@ -66,9 +96,19 @@ class AccessibilityState {
           textScale == other.textScale &&
           highContrast == other.highContrast &&
           simplifiedMode == other.simplifiedMode &&
-          voiceGuidedPrompts == other.voiceGuidedPrompts;
+          voiceGuidedPrompts == other.voiceGuidedPrompts &&
+          reducedMotion == other.reducedMotion &&
+          dataSaver == other.dataSaver &&
+          languageCode == other.languageCode;
 
   @override
-  int get hashCode =>
-      Object.hash(textScale, highContrast, simplifiedMode, voiceGuidedPrompts);
+  int get hashCode => Object.hash(
+        textScale,
+        highContrast,
+        simplifiedMode,
+        voiceGuidedPrompts,
+        reducedMotion,
+        dataSaver,
+        languageCode,
+      );
 }

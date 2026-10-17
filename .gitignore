@@ -14,6 +14,12 @@ build/
 **/*.g.dart
 **/*.freezed.dart
 
+# Localization — run `flutter gen-l10n` after cloning (or `flutter pub get`,
+# which triggers it automatically since pubspec.yaml sets `generate: true`).
+# The .arb sources under lib/l10n/ are the real, tracked, hand-edited files.
+lib/l10n/app_localizations.dart
+lib/l10n/app_localizations_*.dart
+
 # Firebase secrets — never commit
 **/google-services.json
 **/GoogleService-Info.plist
@@ -57,15 +63,24 @@ coverage/
 # Env
 .env
 .env.*
+.env.local
+.env.*.local
 
 # Google Maps API key — never commit, see web/maps_config.js.example
 web/maps_config.js
-/.claude-flow
-/.claude-flow
-/macos
-/.claude-flow
 
 # Platform runner folders — regenerate locally, do not commit.
-# Run: flutter create . --platforms=android,ios
+# Run: flutter create . --platforms=android,ios,macos
 /android/
 /ios/
+/macos/
+
+# Claude Code / Ruflo — editor tooling and session state, local only.
+# Everyone's install differs (plugins, hooks, machine-specific tokens), so
+# none of this is shared via git. CLAUDE.md (the project-instructions file)
+# is intentionally NOT listed here — that one is meant to be checked in.
+.claude/
+.claude-flow/
+.swarm/
+Claude outputs/
+session-history/

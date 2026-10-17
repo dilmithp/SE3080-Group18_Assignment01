@@ -19,7 +19,7 @@ part 'user_profile_dto.g.dart';
 /// dynamic>` rather than nested DTOs — json_serializable handles those
 /// natively with zero extra codegen classes, which keeps this low-risk.
 @freezed
-class UserProfileDto with _$UserProfileDto {
+abstract class UserProfileDto with _$UserProfileDto {
   const UserProfileDto._();
 
   const factory UserProfileDto({
@@ -36,6 +36,8 @@ class UserProfileDto with _$UserProfileDto {
     required Map<String, dynamic> accessibilityPrefs,
     String? emergencyContactName,
     String? emergencyContactPhone,
+    @Default(<String>[]) List<String> languagesSpoken,
+    @Default(<String>[]) List<String> safetyPreferences,
   }) = _UserProfileDto;
 
   factory UserProfileDto.fromJson(Map<String, dynamic> json) =>
@@ -65,9 +67,12 @@ class UserProfileDto with _$UserProfileDto {
           'highContrast': entity.accessibilityPrefs.highContrast,
           'simplifiedInterface': entity.accessibilityPrefs.simplifiedInterface,
           'communicationNotes': entity.accessibilityPrefs.communicationNotes,
+          'textScale': entity.accessibilityPrefs.textScale,
         },
         emergencyContactName: entity.emergencyContactName,
         emergencyContactPhone: entity.emergencyContactPhone,
+        languagesSpoken: entity.languagesSpoken,
+        safetyPreferences: entity.safetyPreferences,
       );
 
   UserProfile toEntity() => UserProfile(
@@ -94,8 +99,11 @@ class UserProfileDto with _$UserProfileDto {
           simplifiedInterface:
               accessibilityPrefs['simplifiedInterface'] as bool? ?? false,
           communicationNotes: accessibilityPrefs['communicationNotes'] as String?,
+          textScale: (accessibilityPrefs['textScale'] as num?)?.toDouble(),
         ),
         emergencyContactName: emergencyContactName,
         emergencyContactPhone: emergencyContactPhone,
+        languagesSpoken: languagesSpoken,
+        safetyPreferences: safetyPreferences,
       );
 }

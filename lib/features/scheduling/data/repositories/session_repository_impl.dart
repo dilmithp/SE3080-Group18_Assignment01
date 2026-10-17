@@ -93,6 +93,28 @@ class SessionRepositoryImpl implements SessionRepository {
   }
 
   @override
+  Future<Either<Failure, Session>> recordAttendance({
+    required String sessionId,
+    required bool checkOut,
+  }) async {
+    try {
+      final dto = await _dataSource.recordAttendance(
+        sessionId: sessionId,
+        checkOut: checkOut,
+      );
+      return Right(dto.toEntity());
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(UnknownFailure(e.message));
+    } catch (_) {
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
   Future<Either<Failure, Session>> confirmSession({
     required String sessionId,
     required String confirmingUserId,

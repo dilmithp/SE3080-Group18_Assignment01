@@ -62,6 +62,13 @@ service cloud.firestore {
 
     // sessions/{sessionId} — Session. Only the two participants
     // (requester/volunteer) can read, create, or update.
+    // auditLogs/{logId} — written only by the auditVerificationReview Cloud
+    // Function (Admin SDK bypasses rules). Admins may read; no client writes.
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /sessions/{sessionId} {
       allow read: if isSignedIn() &&
         (request.auth.uid == resource.data.requesterId ||
@@ -160,6 +167,40 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.authorId);
       allow delete: if isOwner(resource.data.authorId);
       allow update: if false;
+    }
+
+    // referral_codes/{code} — ReferralCode. Doc ID is the code itself. Any
+    // signed-in user can read (redeeming needs to look up someone else's
+    // code); only the owner may create their own. A code is immutable once
+    // created — no client update or delete — but "one code per user" itself
+    // relies on the client-side existence check in
+    // `getOrCreateMyCode`/`getOrCreateCode`, not on this rules file; a
+    // concurrent double-call could in theory mint two codes for the same
+    // user. Low-risk enough for this app's call pattern (one lazy
+    // get-or-create per screen visit) not to warrant a Cloud Function.
+    match /referral_codes/{code} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(request.resource.data.ownerId);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // referrals/{referredUserId} — Referral. Doc ID = the referred user's
+    // own uid, one per user. Any signed-in user can read (needed to render
+    // the referrer's list and to let a client check whether it has already
+    // redeemed a code); only that user may create their own redemption
+    // record, and only for a referrer other than themselves. Keying by
+    // referredUserId is what makes "at most one redemption per user"
+    // atomic: a second attempt targets an existing doc, which Firestore
+    // classifies as an update rather than a create, and update is denied
+    // below — no transaction or extra query needed.
+    match /referrals/{referredUserId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(referredUserId) &&
+        request.resource.data.referredUserId == referredUserId &&
+        request.resource.data.referrerId != referredUserId;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

@@ -1,0 +1,17 @@
+Seeded successfully — 4 demo accounts created with full profiles, ready to show up in Search Volunteers / Matching right now:
+
+┌─────────────────┬───────────┬──────────────┬─────────────────────────────┐
+│      Name       │   Role    │   Locality   │         Login email         │
+├─────────────────┼───────────┼──────────────┼─────────────────────────────┤
+│ Kavindu Silva   │ Volunteer │ Malabe       │ demo.volunteer1@example.com │
+├─────────────────┼───────────┼──────────────┼─────────────────────────────┤
+│ Nimali Fernando │ Volunteer │ Kaduwela     │ demo.volunteer2@example.com │
+├─────────────────┼───────────┼──────────────┼─────────────────────────────┤
+│ Tharindu Perera │ Volunteer │ Battaramulla │ demo.volunteer3@example.com │
+├─────────────────┼───────────┼──────────────┼─────────────────────────────┤
+│ Somasiri Perera │ Elderly   │ Colombo      │ demo.elderly1@example.com   │
+└─────────────────┴───────────┴──────────────┴─────────────────────────────┘
+
+Shared password for all 4: Demo12345!
+
+claude --resume 660d13f6-a98b-44f3-bee0-d853208b471b

@@ -29,9 +29,12 @@ final watchTrustScoreProvider =
 /// knows it has none yet) in hand — callers watch [watchTrustScoreProvider]
 /// (or reuse an existing trust-score read) and pass the result through.
 class TrustBadgeChip extends StatelessWidget {
-  const TrustBadgeChip({required this.trustScore, super.key});
+  const TrustBadgeChip({required this.trustScore, this.onTap, super.key});
 
   final TrustScore? trustScore;
+
+  /// When set, tapping the chip runs this (e.g. opens TrustScoreScreen).
+  final VoidCallback? onTap;
 
   static const _badge = TrustBadge();
 
@@ -77,33 +80,42 @@ class TrustBadgeChip extends StatelessWidget {
     final label = _badge.labelFor(tier);
     final visuals = _visualsFor(tier, theme.colorScheme);
 
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: visuals.background,
+        borderRadius: AppRadius.pillAll,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(visuals.icon, size: 18, color: visuals.foreground),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: visuals.foreground,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+
     return Semantics(
       label: 'Trust badge: $label',
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: visuals.background,
-          borderRadius: AppRadius.pillAll,
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(visuals.icon, size: 18, color: visuals.foreground),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: visuals.foreground,
-                fontWeight: FontWeight.w700,
-              ),
+      button: onTap != null,
+      child: onTap == null
+          ? chip
+          : InkWell(
+              borderRadius: AppRadius.pillAll,
+              onTap: onTap,
+              child: chip,
             ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -27,11 +27,15 @@ const double _pickedZoom = 15;
 /// under the map echoes back the selected coordinate as plain-language
 /// confirmation, and a helper line beneath explains why the app wants this.
 ///
-/// Web-only for now: this repo has no `android/`/`ios/` runner folder yet
-/// (see CLAUDE.md), so native Google Maps API key wiring
-/// (`AndroidManifest` meta-data, `GMSServices.provideAPIKey`) hasn't been
-/// done and can't be from here. The web JS SDK is already loaded by
-/// `web/index.html`/`web/maps_config.js`.
+/// Web and Android are wired; iOS is not yet (no `GMSServices.provideAPIKey`
+/// call in `ios/Runner/AppDelegate.swift`). Android's key lives in
+/// `android/app/src/main/AndroidManifest.xml`'s `com.google.android.geo.API_KEY`
+/// meta-data (regenerated locally, gitignored along with the rest of
+/// `android/` — see CLAUDE.md); web's is loaded by
+/// `web/index.html`/`web/maps_config.js`. Both currently reuse the same key
+/// value — if the map renders blank/gray on a given platform instead of
+/// showing tiles, that key's Google Cloud Console restrictions need an
+/// allowance added for that platform.
 class LocationPicker extends StatefulWidget {
   const LocationPicker({
     required this.initial,

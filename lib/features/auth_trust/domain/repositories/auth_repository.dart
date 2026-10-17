@@ -25,6 +25,10 @@ abstract class AuthRepository {
 
   Future<Either<Failure, Unit>> signOut();
 
+  /// Revokes every session for the signed-in user (all devices must sign in
+  /// again), then signs this device out.
+  Future<Either<Failure, Unit>> signOutEverywhere();
+
   /// Currently signed-in user, or `null` if signed out. Emits on every
   /// auth-state change (sign-in, sign-out, token refresh).
   Stream<AppUser?> authStateChanges();
@@ -33,6 +37,11 @@ abstract class AuthRepository {
   /// at the app's own origin (see `ActionCodeSettings` in the Firebase data
   /// source) so opening it lands back in this app with `handleCodeInApp`.
   Future<Either<Failure, void>> sendSignInLinkToEmail(String email);
+
+  /// Emails a password-reset link. Always reports success to the caller
+  /// for unknown addresses too, so the UI never reveals whether an account
+  /// exists.
+  Future<Either<Failure, void>> sendPasswordResetEmail(String email);
 
   /// Completes a passwordless sign-in started by [sendSignInLinkToEmail].
   /// [emailLink] is the full URL the user opened (e.g. `Uri.base.toString()`

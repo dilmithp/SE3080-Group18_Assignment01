@@ -17,7 +17,9 @@ enum MatchingStrategyType {
   balanced('Balanced'),
   nearest('Nearest'),
   mostTrusted('Most trusted'),
-  bestSkillMatch('Best skill match');
+  bestSkillMatch('Best skill match'),
+  languageFirst('Shares my language'),
+  availabilityFirst('Free when I am');
 
   const MatchingStrategyType(this.label);
 
@@ -34,6 +36,10 @@ enum MatchingStrategyType {
         return const TrustFirstStrategy();
       case MatchingStrategyType.bestSkillMatch:
         return const SkillMatchFirstStrategy();
+      case MatchingStrategyType.languageFirst:
+        return const LanguageFirstStrategy();
+      case MatchingStrategyType.availabilityFirst:
+        return const AvailabilityFirstStrategy();
     }
   }
 }
@@ -119,5 +125,52 @@ class SkillMatchFirstStrategy implements MatchingStrategy {
     return (_skillOverlap(candidate, criteria) * 0.7) +
         (_proximityScore(candidate, criteria) * 0.15) +
         (_trustComponent(candidate) * 0.15);
+  }
+}
+
+/// Share of the searcher's preferred languages the candidate speaks. With no
+/// preference, returns 1.0 so language does not change the ranking.
+double _languageOverlap(MatchCandidate candidate, MatchCriteria criteria) {
+  if (criteria.preferredLanguages.isEmpty) return 1.0;
+  final spoken = candidate.profile.languagesSpoken.map((l) => l.toLowerCase()).toSet();
+  final shared = criteria.preferredLanguages
+      .where((l) => spoken.contains(l.toLowerCase()))
+      .length;
+  return shared / criteria.preferredLanguages.length;
+}
+
+/// Share of the searcher's preferred days the candidate is available on.
+/// With no preference, returns 1.0.
+double _availabilityOverlap(MatchCandidate candidate, MatchCriteria criteria) {
+  if (criteria.preferredTimes.isEmpty) return 1.0;
+  final availableDays =
+      candidate.profile.availabilityWindows.map((w) => w.dayOfWeek).toSet();
+  final matched = criteria.preferredTimes.where(availableDays.contains).length;
+  return matched / criteria.preferredTimes.length;
+}
+
+/// For a searcher who needs someone who speaks their language, so they can
+/// talk comfortably during a visit.
+class LanguageFirstStrategy implements MatchingStrategy {
+  const LanguageFirstStrategy();
+
+  @override
+  double score(MatchCandidate candidate, MatchCriteria criteria) {
+    return (_languageOverlap(candidate, criteria) * 0.6) +
+        (_proximityScore(candidate, criteria) * 0.2) +
+        (_trustComponent(candidate) * 0.2);
+  }
+}
+
+/// For a searcher whose main constraint is timing: ranks volunteers who are
+/// free on the days they asked for above everything else.
+class AvailabilityFirstStrategy implements MatchingStrategy {
+  const AvailabilityFirstStrategy();
+
+  @override
+  double score(MatchCandidate candidate, MatchCriteria criteria) {
+    return (_availabilityOverlap(candidate, criteria) * 0.6) +
+        (_proximityScore(candidate, criteria) * 0.2) +
+        (_trustComponent(candidate) * 0.2);
   }
 }

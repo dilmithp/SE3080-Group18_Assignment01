@@ -5,7 +5,10 @@ import 'package:elderly_companion/core/config/app_config.dart';
 import 'package:elderly_companion/core/routing/app_router.dart';
 import 'package:elderly_companion/core/theme/accessibility/accessibility_controller.dart';
 import 'package:elderly_companion/core/theme/app_theme.dart';
+import 'package:elderly_companion/core/widgets/offline_banner.dart';
+import 'package:elderly_companion/features/auth_trust/presentation/providers/push_registration.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/accessibility_profile_sync.dart';
+import 'package:elderly_companion/l10n/app_localizations.dart';
 
 class App extends ConsumerWidget {
   const App({super.key});
@@ -19,6 +22,7 @@ class App extends ConsumerWidget {
     // why this composition root is the one place allowed to wire core/theme
     // together with a feature.
     ref.watch(accessibilityProfileSyncProvider);
+    ref.watch(pushRegistrationProvider);
 
     return MaterialApp.router(
       title: AppConfig.appName,
@@ -27,14 +31,31 @@ class App extends ConsumerWidget {
         highContrast: accessibility.highContrast,
         simplifiedMode: accessibility.simplifiedMode,
       ),
+      locale: accessibility.languageCode == null
+          ? null
+          : Locale(accessibility.languageCode!),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
       builder: (context, child) {
         final mediaQuery = MediaQuery.of(context);
         return MediaQuery(
           data: mediaQuery.copyWith(
             textScaler: TextScaler.linear(accessibility.textScale),
+            // Folded in here (rather than only checked by AppMotion.reduced)
+            // so every widget that already respects the OS "reduce motion"
+            // setting — not just this app's own motion-aware code — also
+            // respects the user's explicit in-app toggle.
+            disableAnimations: accessibility.reducedMotion ||
+                accessibility.simplifiedMode ||
+                mediaQuery.disableAnimations,
           ),
-          child: child ?? const SizedBox.shrink(),
+          child: Column(
+            children: [
+              const OfflineBanner(),
+              Expanded(child: child ?? const SizedBox.shrink()),
+            ],
+          ),
         );
       },
     );

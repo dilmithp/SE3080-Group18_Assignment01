@@ -58,6 +58,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _sendPasswordReset() async {
+    final email = _emailController.text.trim();
+    if (Validators.email(email) != null) {
+      _showMessage('Enter your email above, then tap Forgot password.');
+      return;
+    }
+    final result = await ref.read(sendPasswordResetUseCaseProvider)(email);
+    if (!mounted) return;
+    result.fold(
+      (failure) => _showMessage(failure.message),
+      (_) => _showMessage(
+        'If an account exists for that email, a reset link is on its way.',
+      ),
+    );
+  }
+
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -120,7 +136,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       prefixIcon: Icons.lock_outline,
                       validator: Validators.password,
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: TextButton(
+                        onPressed: _sendPasswordReset,
+                        child: const Text('Forgot password?'),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
                     AppButton(
                       label: 'Sign in',
                       isLoading: _isSubmitting,
