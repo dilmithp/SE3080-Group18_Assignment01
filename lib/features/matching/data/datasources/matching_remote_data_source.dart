@@ -6,9 +6,9 @@ import 'package:elderly_companion/core/config/app_config.dart';
 import 'package:elderly_companion/core/error/exceptions.dart';
 import 'package:elderly_companion/core/services/firestore_service.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
+import 'package:elderly_companion/features/matching/data/datasources/matching_document_mapper.dart';
 import 'package:elderly_companion/features/matching/data/models/match_candidate_dto.dart';
 import 'package:elderly_companion/features/matching/domain/entities/match_candidate.dart';
-import 'package:elderly_companion/features/profiles/data/models/user_profile_dto.dart';
 import 'package:elderly_companion/features/profiles/domain/entities/geo_coordinates.dart';
 
 /// Raw Firebase calls for matching — the only place in this feature
@@ -94,68 +94,24 @@ class FirebaseMatchingRemoteDataSource implements MatchingRemoteDataSource {
       for (final doc in snapshot.docs) {
         if (doc.id == viewerId) continue;
 
-        final candidateRoleName = await _firestoreService.getDocument<String>(
-          collectionPath: AppConfig.usersCollection,
-          docId: doc.id,
-          fromJson: (data) => data['role'] as String,
-        );
-        if (candidateRoleName == null) continue;
-        final candidateRole = UserRole.values.byName(candidateRoleName);
-        if (!_canSee(viewerRole: viewerRole, candidateRole: candidateRole)) {
-          continue;
-        }
-
-        final data = doc.data();
-        final geoPoint = data['geoPoint'] as GeoPoint;
-        final profileDto = UserProfileDto(
-          userId: doc.id,
-          displayName: data['displayName'] as String,
-          photoUrl: data['photoUrl'] as String?,
-          bio: data['bio'] as String,
-          locality: data['locality'] as String,
-          latitude: geoPoint.latitude,
-          longitude: geoPoint.longitude,
-          skillsOffered: List<String>.from(data['skillsOffered'] as List),
-          helpNeeded: List<String>.from(data['helpNeeded'] as List),
-          availabilityWindows: (data['availabilityWindows'] as List)
-              .map((window) => Map<String, dynamic>.from(window as Map))
-              .toList(),
-          accessibilityPrefs:
-              Map<String, dynamic>.from(data['accessibilityPrefs'] as Map),
-        );
-        final profileEntity = profileDto.toEntity();
-
-        final distanceKm = origin == null
-            ? 0.0
-            : _haversineKm(origin, profileEntity.geoPoint);
-        if (origin != null && radiusKm > 0 && distanceKm > radiusKm) {
-          continue;
-        }
-
-        if (preferredTimes.isNotEmpty) {
-          final availableDays =
-              profileEntity.availabilityWindows.map((w) => w.dayOfWeek).toSet();
-          if (!preferredTimes.any(availableDays.contains)) {
-            continue;
+        // One malformed profile/user document must only drop that
+        // candidate, never fail the whole search.
+        try {
+          final candidate = await _buildCandidate(
+            doc: doc,
+            radiusKm: radiusKm,
+            preferredTimes: preferredTimes,
+            viewerRole: viewerRole,
+            origin: origin,
+          );
+          if (candidate != null) {
+            candidates.add(MatchCandidateDto.fromEntity(candidate));
           }
+        } on FirebaseException {
+          rethrow;
+        } catch (_) {
+          continue;
         }
-
-        final trustScore = await _firestoreService.getDocument<double>(
-              collectionPath: AppConfig.trustScoresCollection,
-              docId: doc.id,
-              fromJson: (data) => (data['score'] as num).toDouble(),
-            ) ??
-            0.0;
-
-        final candidate = MatchCandidate(
-          userId: doc.id,
-          profile: profileEntity,
-          distanceKm: distanceKm,
-          trustScore: trustScore,
-          matchScore: 0.0,
-          matchReasons: const [],
-        );
-        candidates.add(MatchCandidateDto.fromEntity(candidate));
       }
 
       return candidates;
@@ -164,5 +120,57 @@ class FirebaseMatchingRemoteDataSource implements MatchingRemoteDataSource {
     } catch (_) {
       throw const ServerException();
     }
+  }
+
+  /// Resolves one `profiles` document into a [MatchCandidate], or `null`
+  /// when the candidate is not eligible (unknown role, hidden from the
+  /// viewer's role, no location, outside the radius, no shared day).
+  Future<MatchCandidate?> _buildCandidate({
+    required QueryDocumentSnapshot<Map<String, dynamic>> doc,
+    required double radiusKm,
+    required List<String> preferredTimes,
+    required UserRole viewerRole,
+    GeoCoordinates? origin,
+  }) async {
+    final candidateRole = parseUserRole(
+      await _firestoreService.getDocument<String>(
+        collectionPath: AppConfig.usersCollection,
+        docId: doc.id,
+        fromJson: (data) => data['role'] as String,
+      ),
+    );
+    if (candidateRole == null) return null;
+    if (!_canSee(viewerRole: viewerRole, candidateRole: candidateRole)) {
+      return null;
+    }
+
+    final profileDto = profileDtoFromDocument(doc.id, doc.data());
+    if (profileDto == null) return null;
+    final profileEntity = profileDto.toEntity();
+
+    final distanceKm =
+        origin == null ? 0.0 : _haversineKm(origin, profileEntity.geoPoint);
+    if (origin != null && radiusKm > 0 && distanceKm > radiusKm) return null;
+
+    if (preferredTimes.isNotEmpty) {
+      final availableDays =
+          profileEntity.availabilityWindows.map((w) => w.dayOfWeek).toSet();
+      if (!preferredTimes.any(availableDays.contains)) return null;
+    }
+
+    final rawTrust = await _firestoreService.getDocument<double>(
+      collectionPath: AppConfig.trustScoresCollection,
+      docId: doc.id,
+      fromJson: (data) => (data['score'] as num).toDouble(),
+    );
+
+    return MatchCandidate(
+      userId: doc.id,
+      profile: profileEntity,
+      distanceKm: distanceKm,
+      trustScore: rawTrust == null ? 0.0 : normalizeTrustScore(rawTrust),
+      matchScore: 0.0,
+      matchReasons: const [],
+    );
   }
 }
