@@ -29,6 +29,7 @@ import 'package:elderly_companion/features/scheduling/presentation/screens/sched
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_details_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_feedback_screen.dart';
 import 'package:elderly_companion/features/scheduling/presentation/screens/session_series_screen.dart';
+import 'package:elderly_companion/features/sos/presentation/screens/active_sos_alerts_screen.dart';
 
 /// Bridges a Riverpod-watched value into a [Listenable] so [GoRouter] can
 /// react to auth-state changes without rebuilding the whole router.
@@ -218,6 +219,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'adminVerificationQueue',
         pageBuilder: (context, state) =>
             _appPage(context, state, const AdminVerificationQueueScreen()),
+      ),
+      GoRoute(
+        path: RouteNames.adminSosAlerts,
+        name: 'adminSosAlerts',
+        pageBuilder: (context, state) =>
+            _appPage(context, state, const ActiveSosAlertsScreen()),
       ),
       GoRoute(
         path: RouteNames.conversations,

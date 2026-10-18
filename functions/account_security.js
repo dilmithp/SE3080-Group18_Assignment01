@@ -1,5 +1,8 @@
 /**
  * Account security Cloud Functions (features/auth_trust, owner: Pathirana).
+ * Callable HTTPS Function
+ * 
+ * Trigger: Direct call from the Flutter app (e.g., when a user taps "Sign out of all devices" or resets their password).
  *
  *   - revokeAllSessions: callable. Revokes every refresh token for the
  *     caller so all devices must sign in again. The calling device signs out

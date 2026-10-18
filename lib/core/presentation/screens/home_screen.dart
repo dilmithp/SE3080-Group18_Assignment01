@@ -11,6 +11,7 @@ import 'package:elderly_companion/core/widgets/staggered_entrance.dart';
 import 'package:elderly_companion/features/auth_trust/domain/entities/user_role.dart';
 import 'package:elderly_companion/features/auth_trust/presentation/providers/auth_providers.dart';
 import 'package:elderly_companion/features/notifications/presentation/widgets/notification_bell.dart';
+import 'package:elderly_companion/features/sos/presentation/widgets/sos_button.dart';
 import 'package:elderly_companion/l10n/app_localizations.dart';
 
 /// Post-login dashboard. Shell screen owned by no single feature — it just
@@ -54,6 +55,8 @@ class HomeScreen extends ConsumerWidget {
             ),
             children: [
               const _Greeting(),
+              const SizedBox(height: AppSpacing.lg),
+              const SosButton(),
               const SizedBox(height: AppSpacing.lg),
               _SectionHeader(loc.homeWhatToDo),
               const SizedBox(height: AppSpacing.sm),
@@ -207,6 +210,17 @@ class _NavTiles extends StatelessWidget {
                     subtitle: 'Review pending identity documents',
                     tone: _Tone.primary,
                     onTap: () => context.push(RouteNames.adminVerificationQueue),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                StaggeredEntrance(
+                  index: 8,
+                  child: _NavTile(
+                    icon: Icons.emergency_outlined,
+                    title: 'Active SOS alerts',
+                    subtitle: 'Respond to emergency alerts',
+                    tone: _Tone.secondary,
+                    onTap: () => context.push(RouteNames.adminSosAlerts),
                   ),
                 ),
               ],

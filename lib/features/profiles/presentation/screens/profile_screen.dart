@@ -16,6 +16,7 @@ import 'package:elderly_companion/features/profiles/domain/entities/profile_comp
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/profiles/presentation/widgets/emergency_contact_card.dart';
+import 'package:elderly_companion/features/sos/presentation/widgets/sos_button.dart';
 import 'package:elderly_companion/l10n/app_localizations.dart';
 
 /// Owner: Perera (features/profiles). Shows the signed-in user's own
@@ -154,6 +155,8 @@ class _ProfileView extends StatelessWidget {
               if (profile.emergencyContactName?.trim().isNotEmpty == true ||
                   profile.emergencyContactPhone?.trim().isNotEmpty == true)
                 const SizedBox(height: AppSpacing.md),
+              const SosButton(),
+              const SizedBox(height: AppSpacing.md),
               if (profile.bio.isNotEmpty) ...[
                 AppCard(
                   child: Column(
