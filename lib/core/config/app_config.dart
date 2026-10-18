@@ -17,6 +17,7 @@ class AppConfig {
   static const String profilesCollection = 'profiles';
   static const String sessionsCollection = 'sessions';
   static const String sessionFeedbackCollection = 'session_feedback';
+  static const String sosAlertsCollection = 'sos_alerts';
 
   // Storage paths
   static const String verificationDocsPath = 'verification_documents';
