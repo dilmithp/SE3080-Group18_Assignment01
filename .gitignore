@@ -14,6 +14,12 @@ build/
 **/*.g.dart
 **/*.freezed.dart
 
+# Localization — run `flutter gen-l10n` after cloning (or `flutter pub get`,
+# which triggers it automatically since pubspec.yaml sets `generate: true`).
+# The .arb sources under lib/l10n/ are the real, tracked, hand-edited files.
+lib/l10n/app_localizations.dart
+lib/l10n/app_localizations_*.dart
+
 # Firebase secrets — never commit
 **/google-services.json
 **/GoogleService-Info.plist

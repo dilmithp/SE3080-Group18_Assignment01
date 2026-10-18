@@ -19,7 +19,7 @@ part 'user_profile_dto.g.dart';
 /// dynamic>` rather than nested DTOs — json_serializable handles those
 /// natively with zero extra codegen classes, which keeps this low-risk.
 @freezed
-class UserProfileDto with _$UserProfileDto {
+abstract class UserProfileDto with _$UserProfileDto {
   const UserProfileDto._();
 
   const factory UserProfileDto({

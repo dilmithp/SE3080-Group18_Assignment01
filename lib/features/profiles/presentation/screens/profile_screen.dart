@@ -16,6 +16,7 @@ import 'package:elderly_companion/features/profiles/domain/entities/profile_comp
 import 'package:elderly_companion/features/profiles/domain/entities/user_profile.dart';
 import 'package:elderly_companion/features/profiles/presentation/providers/profile_providers.dart';
 import 'package:elderly_companion/features/profiles/presentation/widgets/emergency_contact_card.dart';
+import 'package:elderly_companion/l10n/app_localizations.dart';
 
 /// Owner: Perera (features/profiles). Shows the signed-in user's own
 /// profile, or invites them to create one if [profileProvider] has nothing
@@ -26,14 +27,15 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(loc.profileTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit profile',
+            tooltip: loc.profileEditTooltip,
             onPressed: () => context.push(RouteNames.editProfile),
           ),
         ],
@@ -64,6 +66,7 @@ class _ProfileBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider(userId));
+    final loc = AppLocalizations.of(context)!;
 
     return profileAsync.when(
       loading: () => const LoadingView(),
@@ -72,11 +75,10 @@ class _ProfileBody extends ConsumerWidget {
         if (profile == null) {
           return EmptyView(
             icon: Icons.person_outline,
-            title: 'Your profile is empty',
-            message: 'Add your name, interests and availability so '
-                'companions and helpers can find you.',
+            title: loc.profileEmptyTitle,
+            message: loc.profileEmptyMessage,
             action: AppButton(
-              label: 'Complete profile',
+              label: loc.profileCompleteAction,
               icon: Icons.edit_outlined,
               onPressed: () => context.push(RouteNames.editProfile),
             ),
@@ -96,6 +98,7 @@ class _ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -156,7 +159,7 @@ class _ProfileView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('About', style: theme.textTheme.titleLarge),
+                      Text(loc.profileAbout, style: theme.textTheme.titleLarge),
                       const SizedBox(height: AppSpacing.sm),
                       Text(profile.bio, style: theme.textTheme.bodyLarge),
                     ],
@@ -165,22 +168,22 @@ class _ProfileView extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.languagesSpoken.isNotEmpty) ...[
-                _TagSection(title: 'Languages', tags: profile.languagesSpoken),
+                _TagSection(title: loc.profileLanguages, tags: profile.languagesSpoken),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.safetyPreferences.isNotEmpty) ...[
                 _TagSection(
-                  title: 'Safety preferences',
+                  title: loc.profileSafetyPreferences,
                   tags: profile.safetyPreferences,
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.skillsOffered.isNotEmpty) ...[
-                _TagSection(title: 'Skills offered', tags: profile.skillsOffered),
+                _TagSection(title: loc.profileSkillsOffered, tags: profile.skillsOffered),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.helpNeeded.isNotEmpty) ...[
-                _TagSection(title: 'Help needed', tags: profile.helpNeeded),
+                _TagSection(title: loc.profileHelpNeeded, tags: profile.helpNeeded),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (profile.availabilityWindows.isNotEmpty) ...[
@@ -188,7 +191,7 @@ class _ProfileView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Availability', style: theme.textTheme.titleLarge),
+                      Text(loc.profileAvailability, style: theme.textTheme.titleLarge),
                       const SizedBox(height: AppSpacing.sm),
                       for (final window in profile.availabilityWindows)
                         Padding(
@@ -264,6 +267,7 @@ class _CompletenessCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
 
     if (completeness.isComplete) {
       return AppCard(
@@ -273,7 +277,7 @@ class _CompletenessCard extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
-                'Your profile is complete',
+                loc.profileCompletenessComplete,
                 style: theme.textTheme.titleMedium,
               ),
             ),
@@ -290,7 +294,7 @@ class _CompletenessCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Profile ${completeness.percent}% complete',
+                  loc.profileCompletenessPercent(completeness.percent),
                   style: theme.textTheme.titleLarge,
                 ),
               ),
@@ -309,7 +313,7 @@ class _CompletenessCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('Next steps', style: theme.textTheme.titleMedium),
+          Text(loc.profileNextSteps, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.xs),
           for (final item in completeness.missing.take(4))
             Padding(
