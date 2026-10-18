@@ -333,6 +333,13 @@ class _AccessibilityPanel extends ConsumerWidget {
             value: accessibility.textScale,
             onChanged: controller.setTextScale,
           ),
+          const Divider(height: 1, indent: AppSpacing.md, endIndent: AppSpacing.md),
+          ListTile(
+            leading: const Icon(Icons.settings_accessibility),
+            title: Text(loc.accessibilitySettingsTitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(RouteNames.accessibilitySettings),
+          ),
         ],
       ),
     );
