@@ -164,6 +164,38 @@ Owner: **auth_trust** (Pathirana) · written only by the `auditVerificationRevie
 
 Admins can read; no client can write (firestore.rules `allow write: if false`).
 
+## `referral_codes/{code}`
+Owner: **referrals** (new, unassigned in the original team split, same as
+`community`) · entity: `ReferralCode`
+
+| Field | Type | Notes |
+|---|---|---|
+| `ownerId` | string | ref to `users/{userId}` |
+| `createdAt` | timestamp | |
+
+Doc ID = the code itself (a 6-character string, upper-case letters and
+digits minus the easily-confused `0`/`O`/`1`/`I`). Created lazily the first
+time a user opens the referral screen — see
+`ReferralsRemoteDataSource.getOrCreateCode`. Immutable: a user's code never
+changes once created.
+
+## `referrals/{referredUserId}`
+Owner: **referrals** (new, unassigned) · entity: `Referral`
+
+| Field | Type | Notes |
+|---|---|---|
+| `code` | string | the `referral_codes` doc ID that was redeemed |
+| `referrerId` | string | ref to `users/{userId}` — the code's owner |
+| `referredUserId` | string | ref to `users/{userId}` — same value as the doc ID |
+| `referredName` | string | denormalized from the redeemer's profile at redemption time |
+| `createdAt` | timestamp | |
+
+Doc ID = the redeeming user's own `userId` (same pattern as
+`trust_scores/{userId}`) — this is what makes "a user may redeem at most
+one code, ever" atomic: a second redemption attempt targets an existing
+doc, which firestore.rules denies via its `allow update: if false`, with
+no transaction or extra query needed.
+
 ## Not a collection: matching
 
 **matching** (Wijekoon) doesn't own a collection — `MatchCandidate` results

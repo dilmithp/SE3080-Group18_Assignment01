@@ -38,6 +38,17 @@ flutter pub get
 # and after editing any file with an @freezed class.
 dart run build_runner build --delete-conflicting-outputs
 
+# Regenerate lib/l10n/app_localizations*.dart (gitignored) from the tracked
+# .arb sources in lib/l10n/. Runs automatically on `flutter pub get` too
+# (pubspec.yaml sets `generate: true`), but run explicitly after editing
+# any .arb file. Supports English (en), Sinhala (si), Tamil (ta) — see
+# l10n.yaml. AppLocalizations.of(context)! in a screen's build method;
+# AppLocalizations.localizationsDelegates/.supportedLocales are already
+# wired into MaterialApp.router in app.dart. The active language is
+# AccessibilityState.languageCode (null = follow device locale), set via
+# AccessibilitySettingsScreen's language picker.
+flutter gen-l10n
+
 # Wires the project to a real Firebase project, generates the (gitignored)
 # lib/core/config/firebase_options.dart. Requires:
 #   dart pub global activate flutterfire_cli

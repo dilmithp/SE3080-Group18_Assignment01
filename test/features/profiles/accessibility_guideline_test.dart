@@ -20,7 +20,7 @@ void main() {
   // ---------------------------------------------------------------------------
 
   /// Wraps [widget] in the minimal scaffold needed for guideline checks.
-  Widget _wrap(Widget widget) => MaterialApp(
+  Widget wrapForTest(Widget widget) => MaterialApp(
         theme: ThemeData.light(useMaterial3: true),
         home: Scaffold(body: widget),
       );
@@ -33,7 +33,7 @@ void main() {
   group('androidTapTargetGuideline — profile screen widgets', () {
     testWidgets('AppButton meets minimum tap target (48x48)', (tester) async {
       await tester.pumpWidget(
-        _wrap(
+        wrapForTest(
           Center(
             child: AppButton(
               label: 'Save profile',
@@ -50,7 +50,7 @@ void main() {
 
     testWidgets('EditProfileScreen save button meets minimum tap target', (tester) async {
       await tester.pumpWidget(
-        _wrap(
+        wrapForTest(
           ElevatedButton(
             key: const Key('save_profile_btn'),
             onPressed: () {},
@@ -66,7 +66,7 @@ void main() {
 
     testWidgets('IconButton meets minimum tap target', (tester) async {
       await tester.pumpWidget(
-        _wrap(
+        wrapForTest(
           IconButton(
             key: const Key('edit_icon'),
             icon: const Icon(Icons.edit_outlined),
@@ -83,7 +83,7 @@ void main() {
 
     testWidgets('FilterChip meets minimum tap target', (tester) async {
       await tester.pumpWidget(
-        _wrap(
+        wrapForTest(
           FilterChip(
             key: const Key('safety_chip'),
             label: const Text('Female volunteers only'),
@@ -100,7 +100,7 @@ void main() {
 
     testWidgets('SwitchListTile meets minimum tap target', (tester) async {
       await tester.pumpWidget(
-        _wrap(
+        wrapForTest(
           SwitchListTile(
             key: const Key('high_contrast_toggle'),
             title: const Text('High Contrast Mode'),
@@ -122,7 +122,7 @@ void main() {
   group('labeledTapTargetGuideline — profile & settings widgets', () {
     testWidgets('AppButton has explicit button semantics label', (tester) async {
       await tester.pumpWidget(
-        _wrap(
+        wrapForTest(
           Center(
             child: AppButton(
               label: 'Save profile',
@@ -139,7 +139,7 @@ void main() {
 
     testWidgets('Labelled edit-profile IconButton passes', (tester) async {
       await tester.pumpWidget(
-        _wrap(
+        wrapForTest(
           Semantics(
             label: 'Edit profile',
             button: true,
@@ -160,7 +160,7 @@ void main() {
 
     testWidgets('Labelled Call emergency contact button passes', (tester) async {
       await tester.pumpWidget(
-        _wrap(
+        wrapForTest(
           Semantics(
             label: 'Call emergency contact Amara at +94711234567',
             button: true,
@@ -181,7 +181,7 @@ void main() {
 
     testWidgets('Labelled availability remove button passes', (tester) async {
       await tester.pumpWidget(
-        _wrap(
+        wrapForTest(
           Semantics(
             label: 'Remove Monday 09:00–12:00 availability window',
             button: true,

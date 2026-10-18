@@ -1,0 +1,117 @@
+================================================================================
+CARECONNECT — VIVA DEMO GUIDE
+================================================================================
+Written right before the viva. Be honest with the panel about the "not
+deployed yet" items below if asked — it reads better than a live failure.
+
+--------------------------------------------------------------------------------
+STEP 0 — BEFORE YOU WALK IN (2 minutes)
+--------------------------------------------------------------------------------
+1. Make sure the APK on your test device is the LATEST build:
+     build\app\outputs\flutter-apk\app-release.apk
+   If you installed an earlier one today, uninstall and reinstall this one —
+   it's the only build that has TTS, the offline banner, Reduced Motion,
+   Data Saver and the language picker in it.
+2. Have Wi-Fi/mobile data ON for the whole demo except the one offline-banner
+   step below.
+3. Sign in once before the panel arrives so you're not debugging a login on
+   stage.
+
+--------------------------------------------------------------------------------
+SECTION 1 — CONFIRMED WORKING ON YOUR DEVICE (safe to demo first)
+--------------------------------------------------------------------------------
+- Sign in / sign out, splash → login → home routing.
+- Home dashboard: nav tiles, inline accessibility panel (high contrast,
+  simplified mode, text size slider).
+- Profile screen: view profile, trust badge, emergency contact card with
+  one-tap Call button, completeness card with "next steps" list.
+- Edit profile: name/locality/bio, skills/help/languages tags, safety
+  preference chips, emergency contact fields (now with phone format
+  validation), "Use my current location" button (needs location permission —
+  grant it if asked), map tap-to-pin.
+- Matching screen: search, strategy picker (Balanced / Nearest / Most
+  trusted / Best skill match / Shares my language / Free when I am), match
+  reasons shown per result.
+- Scheduling: book a session, confirm/cancel, check-in/check-out buttons
+  (check-in only enabled 30 min before a confirmed session — don't demo this
+  one live unless you have a session scheduled for right now).
+- Messaging and Community feed screens.
+- Referrals: generate/share your code, redeem a code, see who you've
+  referred. The Firestore rules and indexes this needs WERE deployed to the
+  live project this session — do one quick open-the-referrals-tab check
+  before the panel arrives, just to be sure.
+
+--------------------------------------------------------------------------------
+SECTION 2 — NEW THIS SESSION, CODE VERIFIED, DO A 2-MIN LIVE CHECK FIRST
+--------------------------------------------------------------------------------
+All of these pass `flutter analyze` (0 issues) and the full test suite (288
+tests) and the app builds clean with them — but nobody has watched them run
+on a real device yet. Check each once before relying on it live.
+
+- LANGUAGE SWITCHING (English / Sinhala / Tamil):
+  Profile → Accessibility (or Home → Accessibility panel → full settings) →
+  Language card → tap it → pick Sinhala or Tamil → screen text should change
+  immediately. This is the headline new feature — test it first.
+
+- VOICE-GUIDED PROMPTS (text-to-speech):
+  Accessibility Settings → turn on "Voice-Guided Prompts" → device should
+  speak "Voice-Guided Prompts" out loud. Needs a device/emulator with a TTS
+  engine and the volume up. If it stays silent, don't dwell on it live —
+  say it's wired and move on.
+
+- REDUCED MOTION / DATA SAVER toggles:
+  Accessibility Settings → two new switches under "Display & Layout" and
+  "Assistance & Audio". Reduced Motion turns off app animations; Data Saver
+  has no visible effect yet (it's a flag other screens can read later) — if
+  asked, say it's the hook for a future image-compression feature.
+
+- OFFLINE BANNER:
+  Turn off Wi-Fi/data on the device → within ~5 seconds a red "You are
+  offline" banner should appear at the top of the screen → turn data back on
+  → it disappears within ~5 seconds. Good one to demo deliberately — it's
+  visual and simple.
+
+--------------------------------------------------------------------------------
+SECTION 3 — BUILT BUT NOT LIVE — DO NOT DEMO THESE
+--------------------------------------------------------------------------------
+- "Sign out of all devices": the Cloud Function it calls is written but NOT
+  deployed. Tapping it (if you can find where it's wired) will fail.
+- Admin audit log: same — function written, not deployed.
+- Session reminders (push + email): scheduler function written, not
+  deployed, and needs the project on Firebase's paid Blaze plan plus the
+  Trigger Email extension installed — neither is done.
+- Trust-score explanation screen: the screen and its scoring logic are built
+  and tested, but nothing in the UI currently links to it. Don't try to
+  navigate to it live.
+
+If asked about any of these: "implemented and unit-tested, pending
+deployment/wiring" is the accurate, honest answer.
+
+--------------------------------------------------------------------------------
+SECTION 4 — SUGGESTED DEMO ORDER (~6-8 minutes)
+--------------------------------------------------------------------------------
+1. Sign in → Home dashboard (shows accessibility panel exists everywhere).
+2. Profile → point out trust badge, emergency contact card, completeness
+   card.
+3. Edit profile → change the language from Accessibility Settings →
+   navigate back to Profile → show the screen text changed language.
+4. Toggle High Contrast and Simplified Mode on the Accessibility screen —
+   visible instant effect.
+5. Turn off network → show the offline banner → turn it back on.
+6. Matching screen → run a search → change strategy → show match reasons
+   changing.
+7. Referrals → show your code, mention the Firestore rules securing it.
+8. Scheduling → show a booked session and its status.
+
+--------------------------------------------------------------------------------
+SECTION 5 — IF SOMETHING BREAKS LIVE
+--------------------------------------------------------------------------------
+- Map doesn't load / crashes: you already fixed this (Maps API key +
+  location permissions) — if it still happens, it's a fresh issue, not a
+  known one. Skip the map, keep going.
+- Gray screen on launch: this was the Firebase-not-configured bug from
+  earlier — should not recur on this APK, but if it does, restart the app
+  once; don't troubleshoot live.
+- Anything Firebase-related failing: say it's a backend/deployment step, not
+  an app-code issue, and move to the next feature. That's true for every
+  item in Section 3.
